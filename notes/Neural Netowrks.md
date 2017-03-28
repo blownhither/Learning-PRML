@@ -5,7 +5,7 @@
 
 ## Concepts
 - Neuron: n inputs each having weight w, summed by a activation function   
-- Activation function: (Naive) x>0;  (sigmoid)$\frac{1}{1+e^{-x}}$  
+- **Activation function**: (Naive) x>0;  (sigmoid)$\frac{1}{1+e^{-x}}$  
 - Perceptron(感知机): A 2-layer network with one output, making decision
     + e.g. $y=f(\sum_i w_i x_i - \theta)$, where f(x) = 1(x>0), can implement AND, OR, NOT
     + practically w is learned from training, also, $\theta$ can be seen as a dummy node with w=-1 that can be learned
@@ -50,11 +50,51 @@ where hidden gradient $e_h$ is $$e_h = ... = b_h(1-b_h)\sum^l_{j=1}w_{hj}g_j$$
     + **Regularization**: punish complex network by $$E=\lambda \frac{1}{m}\sum E_k + (1-\lambda)\sum w_i^2$$ 
     where $\lambda$ comes from cross-validation (?)
 
-
-
 > Hint: use one-hot coding for discrete, parallel labels
 
+## 5.4 Local / Global Minimum
+solutions:  
+
+- Test more than one random starting point
+- **Simulated Annealing(模拟退火)**: Accept _worse_ result at each step with probabilities
+- **Random Gradient Descent**
+- Genetic Algorithm 遗传算法
+
+## 5.6 Deep Learning
+Very deep neural networks.  
+However, using Standard BP on deep networks result in diverge.   
+
+- **Unsupervised layer-wise training(无监督逐层训练)** 
+    + Pre-training: Use last layer to train a new hidden layer.
+    + Fine-tuning: After pre-training, work on the whole network
+    This can be seen as partitioning the parameters first and find good configuration in each partition. Then find global optimal with combined local optimal. -> Larger freedom, less cost.
+    > e.g. **Deep Belief Network(DBN, 深度信念网络)** pre-train every layer with Boltzmann machine, and then optimize the whole network with BP
+- **Weight Sharing (权共享)**
+    + A group of neurons using same connection weights.
+    > e.g. **Convolutional Neural Network (CNN)**
+    > On hand-written numbers [Lecun et al., 1998]
 
 
+## 5.5 Other common neural networks
 
+- Radial Basis Function RBF（径向基函数）: use Euclid distance and neural center $c_i$ as  activation function
+- Competitive learning(竞争学习): unsupervised
+    - Adaptive Resonance Theory(ART， 自适应谐振网络): allow incremental learning / online learning
+- Self-Organizing Map(SOM, 自组织映射网络)
+- Self-adaptive structure network （结构自适应网络）
+    + Cascade-Correlation （级联相关网络）
+- Recurrent Neural Networks （递归神经网络）
+    + Elman Networks
+- Boltzmann Machine
+
+## 5.7 Reading
+
+- A good neural network textbook 
+    + [Bishop, 1995]
+- Tricks 
+    + [Reed and Marks, 1998. _Neural Smithing_]
+    + [Orr and MUller, 1998. _Tricks of the Trade_]
+- Understanding black box 
+    + [Tickle et al., 1998. _Extracting knowledge_]
+    + [Zhou. 2004. _Rule extraction_]
 
