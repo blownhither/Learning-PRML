@@ -42,12 +42,12 @@ class NaiveBayesClassifier:
 
         print("Done forming distribution. ")
 
-    def predict_one(self, x, smoothing=True):
+    def _predict(self, x, smoothing=True):
         """
-        Predict the distirbution of y with given x, return array.
-        :param x: []
-        :return: {y_type: float}, possibilities of each
-        """
+                Predict the distirbution of y with given x, return array.
+                :param x: []
+                :return: {y_type: float}, possibilities of each
+                """
         ans = {}
         if smoothing:
             sm = self.smoothing
@@ -65,10 +65,34 @@ class NaiveBayesClassifier:
 
             prior = (c_y + sm) / (self._n_samples + sm * self._y_ntypes)
             ans[y] = prior * prod
+        return ans
+
+    def predict_one(self, x, smoothing=True):
+        """
+        Predict the distirbution of y with given x, return array.
+        :param x: []
+        :return: {y_type: float}, possibilities of each
+        """
+        ans = self._predict(x, smoothing)
         s = np.sum(list(ans.values()))
         for k in ans.keys():
             ans[k] /= s
         return ans
+
+    def predict(self, x, smoothing=True):
+        n_features, n_samples = x.shape
+        ans = [None] * n_samples
+        for i in range(n_samples):
+            d = self._predict(x[:, i], smoothing)
+            m = -1
+            km = None
+            for k, v in d.items():
+                if v > m:
+                    km = k
+                    m = v
+            ans[i] = km
+        return ans
+
 
 
 if __name__ == '__main__':
@@ -77,4 +101,7 @@ if __name__ == '__main__':
     nbc = NaiveBayesClassifier()
     nbc.feed(x, y)
     ans = nbc.predict_one(x=[2, 1])
+    print(ans)
+
+    ans = nbc.predict(x=np.array([[2], [1]]))
     print(ans)
