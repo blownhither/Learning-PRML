@@ -1,62 +1,6 @@
 import abc
 import numpy as np
 
-class BPPerceptron:
-    """
-    BPPerceptron, perceptron with specified number of layer
-    Notes: this is the interface with param check
-    """
-    def __init__(self, n_input, n_hidden, n_output):
-        # TODO: param check
-        self._n = n_input
-        self._n_output = n_output
-        self._n_hidden = n_hidden
-        self._hidden = [Neuron(n_input) for _ in range(n_hidden)]
-        self._output = [Neuron(n_hidden) for _ in range(n_output)]
-
-    def _predict_hidden(self, x):
-        ans = [n.predict(x) for n in self._hidden]
-        return np.array(ans)
-
-    def _predict_output(self, y_hidden):
-        ans = [n.predict(y_hidden) for n in self._output]
-        return np.array(ans)
-
-    def _update_output(self, prior_output, truth, output):
-        g = [n.learn(prior_output, truth, output) for n in self._output]
-        return np.array(g)
-
-    def _calc_hidden_gradient(self, neurons, output, subsequent_neurons):
-        g = np.zeros(len(neurons))
-        for i in range(len(neurons)):
-            n = neurons[i]
-            g[i] = np.sum([x.get_weight(i) * x.gradient for x in subsequent_neurons])
-        g *= output * (1 - output)
-        return g
-
-    def _update_hidden(self, inputs, neurons, gradients):
-        for n, g in zip(neurons, gradients):
-            n.learn(inputs, g=g)
-
-    def feed(self, x, y):
-        x = np.array(x)
-        y = np.array(y)
-        hidden_output = self._predict_hidden(x)
-        final_output = self._predict_output(hidden_output)
-        self._update_output(hidden_output, y, final_output)
-        hidden_gradient = self._calc_hidden_gradient(self._hidden, hidden_output, self._output)
-        self._update_hidden(x, self._hidden, hidden_gradient)
-
-    def predict(self, x):
-        pass
-
-    def size(self):
-        return {
-            "input": self._n,
-            "hidden": self._n_hidden,
-            "output": self._n_output
-        }
-
 
 class NetworkLayer(metaclass=abc.ABCMeta):
     """
@@ -101,7 +45,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         """
         pass
 
-    def learn(self, x, y, gradient=None):
+    def train(self, x, y, gradient=None):
         """
         Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
         :param x: [float] * n_priors, input x
@@ -111,7 +55,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         """
         y_ = self.predict(x)
         gradient = gradient or self.gradient(y, y_)
-        gradient = [n.learn(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
+        gradient = [n.train(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
         return gradient
 
     def set_next_layer(self, next_layer):
@@ -120,7 +64,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
     def get_next_layer(self):
         return self._next_layer
 
-    def get_save_gradient(self):
+    def get_saved_gradient(self):
         return self._save_gradient
 
     def get_weight(self, i=None):
@@ -159,7 +103,7 @@ class OutputNetworkLayer(NetworkLayer):
 
     def gradient(self, y_, y=None):
         assert y_ is not None and y is not None
-        self._save_gradient =  y_ * (1 - y_) * (y - y_)
+        self._save_gradient = y_ * (1 - y_) * (y - y_)
         return self._save_gradient
 
 
@@ -170,6 +114,7 @@ class HiddenNetworkLayer(NetworkLayer):
     def gradient(self, y_, y=None):
         assert y is None
         l = self.get_next_layer()
+        assert isinstance(l, NetworkLayer)
         g = [np.sum(l.get_weight(i) * l.get_saved_gradient()) for i in range(self._n_neurons)]
         g *= y_ * (1 - y_)
         return g
@@ -198,16 +143,17 @@ class Neuron:
         :param x: [float*n_input]
         :return: float, prediction
         """
-        s = np.sum(np.append(np.array(x), [-1]) * self._weight) # the last one is threshold
+        s = np.sum(np.append(np.array(x), [-1]) * self._weight)     # the last one is threshold
         y = self._activation_func(s)
         return y
 
-    def learn(self, x, y=None, y_=None, g=None):
+    def train(self, x, y=None, y_=None, g=None):
         """
         Update neuron with BP algorithm (using gradient descent)
         :param x: [float] * n_input
         :param y: float, truth
         :param y_: float, prediction result
+        :param g: gradient input
         :return: float, gradient before update
         """
         if g is None:
@@ -254,19 +200,3 @@ class Neuron:
 
     def get_threshold(self):
         return self._weight[-1]
-
-
-
-
-def test():
-    b = BPPerceptron(2, 2, 1)
-    b.feed([0, 0], [0])
-    b.feed([0, 1], [1])
-    b.feed([1, 0], [1])
-    b.feed([1, 1], [0])
-
-# TODO: early stopping
-# TODO: regularization
-
-if __name__ == "__main__":
-    test()
