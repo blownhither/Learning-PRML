@@ -63,20 +63,25 @@ class NetworkLayer(metaclass=abc.ABCMeta):
     Abstraction of network layer containing some Neurons with similar settings
     No param check enforced in this class
     """
-    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
+    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None, next_layer=None):
         """
-        Initialize a layer in the network
         :param n_priors: int, number of input this layer receives
         :param n_neurons: int, number of neurons in this layer
+        :param weight_init: NOT IMPLEMENTED !
+        :param activation_func: lambda or function, Sigmoid by default 1/(1+exp(-x))
+        :param learn_rate: float, learning rate
         """
+        # TODO: weight init
         self._neurons = [
-            Neuron(n_priors, weight_init=weight_init, activation_func=activation_func, learn_rate=learn_rate)
+            Neuron(n_priors, weight_init=None, activation_func=activation_func, learn_rate=learn_rate)
             for _ in range(n_neurons)
             ]
         self._n_prior = n_priors
         self._n_neurons = n_neurons
         self._activation_func = activation_func
         self._learn_rate = learn_rate
+        self._next_layer = next_layer
+        self._save_gradient = None
 
     def predict(self, x):
         """
@@ -88,24 +93,42 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         return np.array(ans)
 
     @abc.abstractmethod
-    def gradient(self):
+    def gradient(self, y_, y=None):
+        """
+        :param y: truth
+        :param y_: prediction
+        :return:
+        """
         pass
 
-    def learn(self, x, y_=None, gradient=None):
+    def learn(self, x, y, gradient=None):
         """
         Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
         :param x: [float] * n_priors, input x
-        :param y_: truth of y
+        :param y: truth of y
         :param gradient: [float] * n_neurons, calculated if not specified
-        :return:
+        :return: [float] * n_neurons, gradient for convenience
         """
-        y = self.predict(x)
-        gradient = gradient or self.gradient()
+        y_ = self.predict(x)
+        gradient = gradient or self.gradient(y, y_)
         gradient = [n.learn(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
         return gradient
 
-    def get_weight(self):
-        ans = [n.get_weight() for n in self._neurons]
+    def set_next_layer(self, next_layer):
+        self._next_layer = next_layer
+
+    def get_next_layer(self):
+        return self._next_layer
+
+    def get_save_gradient(self):
+        return self._save_gradient
+
+    def get_weight(self, i=None):
+        """
+        :param i: If i specified, get w_{i} from each neuron, or [w_{ix} for x in layer]
+        :return:
+        """
+        ans = [n.get_weight(i) for n in self._neurons]
         return np.array(ans)
 
     def get_threshold(self):
@@ -125,6 +148,31 @@ class NetworkLayer(metaclass=abc.ABCMeta):
             "activation_function": self._activation_func,
             "learn_rate": self.get_learn_rate()
         }
+
+    def size(self):
+        return self._n_neurons
+
+
+class OutputNetworkLayer(NetworkLayer):
+    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
+        super(OutputNetworkLayer, self).__init__(n_priors, n_neurons, weight_init, activation_func, learn_rate)
+
+    def gradient(self, y_, y=None):
+        assert y_ is not None and y is not None
+        self._save_gradient =  y_ * (1 - y_) * (y - y_)
+        return self._save_gradient
+
+
+class HiddenNetworkLayer(NetworkLayer):
+    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
+        super(HiddenNetworkLayer, self).__init__(n_priors, n_neurons, weight_init, activation_func, learn_rate)
+
+    def gradient(self, y_, y=None):
+        assert y is None
+        l = self.get_next_layer()
+        g = [np.sum(l.get_weight(i) * l.get_saved_gradient()) for i in range(self._n_neurons)]
+        g *= y_ * (1 - y_)
+        return g
 
 
 class Neuron:
