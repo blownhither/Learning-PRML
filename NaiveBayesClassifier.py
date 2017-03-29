@@ -3,6 +3,7 @@ from collections import Counter
 
 import numpy as np
 
+
 class NaiveBayesClassifier:
     def __init__(self, smoothing=1):
         self._x = self._y = None    # Mat-like, data fed
@@ -20,6 +21,8 @@ class NaiveBayesClassifier:
         feed data into Naive Bayes Classifier, typically X[m*n], Y[n]
         :param x: Matrix with each column representing X of a sample
         :param y: 1-D Array representing Y of a sample, corresponding to each in X
+        :param x_types:
+        :param y_types:
         :return: Nothing returned
         """
         try:
@@ -55,8 +58,6 @@ class NaiveBayesClassifier:
             sm = 0
         for y in self._y_types:
             c_y = self._prior[y]
-            # prod = np.prod([(self._cond[y][x[i]] + sm) / (c_y + sm * self._x_ntypes[i]) for i in range(self._n_features)])
-
             prod = [0] * self._n_features
             for f in range(self._n_features):
                 count = np.count_nonzero(np.logical_and(self._x[f] == x[f], self._y == y))
@@ -69,8 +70,9 @@ class NaiveBayesClassifier:
 
     def predict_one(self, x, smoothing=True):
         """
-        Predict the distirbution of y with given x, return array.
+        Predict the distrIbution of y with given x, return array.
         :param x: []
+        :param smoothing: T/F
         :return: {y_type: float}, possibilities of each
         """
         ans = self._predict(x, smoothing)
@@ -94,8 +96,7 @@ class NaiveBayesClassifier:
         return ans
 
 
-
-if __name__ == '__main__':
+def test():
     x = np.array(np.mat("1 1 1 1 1 2 2 2 2 2 3 3 3 3 3; 1 2 2 1 1 1 2 2 3 3 3 2 2 3 3"))
     y = np.array(np.mat("1 1 2 2 1 1 1 2 2 2 2 2 2 2 1"))[0].tolist()
     nbc = NaiveBayesClassifier()
@@ -105,3 +106,6 @@ if __name__ == '__main__':
 
     ans = nbc.predict(x=np.array([[2], [1]]))
     print(ans)
+
+if __name__ == '__main__':
+    test()

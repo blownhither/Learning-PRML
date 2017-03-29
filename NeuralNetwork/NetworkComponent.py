@@ -54,7 +54,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         :return: [float] * n_neurons, gradient for convenience
         """
         y_ = self.predict(x)
-        gradient = gradient or self.gradient(y, y_)
+        gradient = gradient or self.gradient(y=y, y_=y_)
         gradient = [n.train(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
         return gradient
 
