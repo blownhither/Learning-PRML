@@ -79,6 +79,11 @@ class BPPerceptron:
 def test():
     d = pds.read_csv('Dataset/watermelon-tiny.csv')
     d = d.sample(frac=1)
+
+    for col in d.columns:
+        c = d[col]
+        d[col] = (c - c.min()) / (c.max() - c.min())
+
     train = d[d.columns[1:-1]]
     truth = d[d.columns[-1]]
     n = len(d)
@@ -90,7 +95,7 @@ def test():
     print(p)
     print(truth[m:])
 
-    print(np.sum(np.abs(p - np.array(truth[m:]) < 0.5)) / float(len(p)))
+    # print(np.sum(np.abs(p - np.array(truth[m:])) < 0.5))
 
 # TODO: early stopping
 # TODO: regularization
