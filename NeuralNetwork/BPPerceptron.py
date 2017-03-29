@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pds
 from NeuralNetwork.NetworkComponent import OutputNetworkLayer
 
 
@@ -76,17 +77,21 @@ class BPPerceptron:
 
 
 def test():
-    b = BPPerceptron(2, 1, 1)
-    x = np.array([
-            [0, 0], [0, 1], [1, 0], [1, 1]
-        ])
-    y = np.array([
-        [0], [1], [1], [0]
-    ])
+    d = pds.read_csv('Dataset/watermelon-tiny.csv')
+    d = d.sample(frac=1)
+    train = d[d.columns[1:-1]]
+    truth = d[d.columns[-1]]
+    n = len(d)
+    m = int(n * 0.8)
 
-    b.train_many( x=x.repeat(10, 0), y=y.repeat(10, 0))
-    ans = b.predict([1, 1])
-    print(ans)
+    b = BPPerceptron(8, 1, 1)
+    b.train_many(train[:m], np.array(truth[:m]).reshape((-1, 1)))
+    p = np.array([b.predict(x[1]) for x in train[m:].iterrows()])
+    print(p)
+    print(truth[m:])
+
+    print(np.sum(np.abs(p - np.array(truth[m:]) < 0.5)) / float(len(p)))
+
 # TODO: early stopping
 # TODO: regularization
 
