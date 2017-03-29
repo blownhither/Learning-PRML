@@ -1,7 +1,11 @@
+import abc
 import numpy as np
 
-
 class BPPerceptron:
+    """
+    BPPerceptron, perceptron with specified number of layer
+    Notes: this is the interface with param check
+    """
     def __init__(self, n_input, n_hidden, n_output):
         # TODO: param check
         self._n = n_input
@@ -19,7 +23,7 @@ class BPPerceptron:
         return np.array(ans)
 
     def _update_output(self, prior_output, truth, output):
-        g = [n.update(prior_output, truth, output) for n in self._output]
+        g = [n.learn(prior_output, truth, output) for n in self._output]
         return np.array(g)
 
     def _calc_hidden_gradient(self, neurons, output, subsequent_neurons):
@@ -32,7 +36,7 @@ class BPPerceptron:
 
     def _update_hidden(self, inputs, neurons, gradients):
         for n, g in zip(neurons, gradients):
-            n.update(inputs, g=g)
+            n.learn(inputs, g=g)
 
     def feed(self, x, y):
         x = np.array(x)
@@ -53,10 +57,80 @@ class BPPerceptron:
             "output": self._n_output
         }
 
-class NetworkLayer:
-    def __init__(self, n_priors, n_neurons, ):
+
+class NetworkLayer(metaclass=abc.ABCMeta):
+    """
+    Abstraction of network layer containing some Neurons with similar settings
+    No param check enforced in this class
+    """
+    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
+        """
+        Initialize a layer in the network
+        :param n_priors: int, number of input this layer receives
+        :param n_neurons: int, number of neurons in this layer
+        """
+        self._neurons = [
+            Neuron(n_priors, weight_init=weight_init, activation_func=activation_func, learn_rate=learn_rate)
+            for _ in range(n_neurons)
+            ]
+        self._n_prior = n_priors
+        self._n_neurons = n_neurons
+        self._activation_func = activation_func
+        self._learn_rate = learn_rate
+
+    def predict(self, x):
+        """
+        Produce layer output with input x
+        :param x: [float] * n_priors
+        :return: [float] * n_neurons
+        """
+        ans = [n.predict(x) for n in self._neurons]
+        return np.array(ans)
+
+    @abc.abstractmethod
+    def gradient(self):
+        pass
+
+    def learn(self, x, y_=None, gradient=None):
+        """
+        Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
+        :param x: [float] * n_priors, input x
+        :param y_: truth of y
+        :param gradient: [float] * n_neurons, calculated if not specified
+        :return:
+        """
+        y = self.predict(x)
+        gradient = gradient or self.gradient()
+        gradient = [n.learn(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
+        return gradient
+
+    def get_weight(self):
+        ans = [n.get_weight() for n in self._neurons]
+        return np.array(ans)
+
+    def get_threshold(self):
+        ans = [n.get_threshold() for n in self._neurons]
+        return np.array(ans)
+
+    def get_learn_rate(self):
+        ans = [n.get_learn_rate() for n in self._neurons]
+        return np.array(ans)
+
+    def shape(self):
+        return {
+            "neurons": self._n_neurons,
+            "prior": self._n_prior,
+            "weight": self.get_weight(),
+            "threshold": self.get_threshold(),
+            "activation_function": self._activation_func,
+            "learn_rate": self.get_learn_rate()
+        }
+
 
 class Neuron:
+    """
+    Basic element in neural network, with some input weights, activation function and learning rate
+    """
     def __init__(self, n_priors, weight_init=None, activation_func=None, learn_rate=None):
         """
         Initialize Neuron with following param
@@ -66,8 +140,8 @@ class Neuron:
         """
         self._n = n_priors
         self._weight = weight_init or np.random.rand(n_priors + 1)
-        self._activation_func = activation_func or (lambda x: 1/(1+np.exp(-x)))
-        self._learn_rate = learn_rate or 0.01   # TODO: 0.01?
+        self._activation_func = activation_func or (lambda x: 1 / (1 + np.exp(-x)))
+        self._learn_rate = learn_rate or 0.01
         self.gradient = None
 
     def predict(self, x):
@@ -76,19 +150,17 @@ class Neuron:
         :param x: [float*n_input]
         :return: float, prediction
         """
-        s = np.sum(np.array(list(x) + [-1]) * self._weight) # the last one is threshold
+        s = np.sum(np.append(np.array(x), [-1]) * self._weight) # the last one is threshold
         y = self._activation_func(s)
         return y
 
-    def update(self, x, y=None, y_=None, g=None):
-        # TODO: other algorithm
-        # TODO: nedd x?
+    def learn(self, x, y=None, y_=None, g=None):
         """
-        Update neuron with BP algorithm
-        :param x: [float*n_input]
+        Update neuron with BP algorithm (using gradient descent)
+        :param x: [float] * n_input
         :param y: float, truth
         :param y_: float, prediction result
-        :return:
+        :return: float, gradient before update
         """
         if g is None:
             g = y_ * (1 - y_) * (y - y_)
@@ -123,6 +195,9 @@ class Neuron:
     def set_threshold(self, t):
         self._weight[-1] = float(t)
 
+    def get_learn_rate(self):
+        return self._learn_rate
+
     def get_weight(self, i=None):
         if i:
             return self._weight[i]
@@ -142,7 +217,8 @@ def test():
     b.feed([1, 0], [1])
     b.feed([1, 1], [0])
 
-
+# TODO: early stopping
+# TODO: regularization
 
 if __name__ == "__main__":
     test()
