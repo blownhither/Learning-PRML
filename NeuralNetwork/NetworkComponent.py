@@ -7,7 +7,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
     Abstraction of network layer containing some Neurons with similar settings
     No param check enforced in this class
     """
-    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None, next_layer=None):
+    def __init__(self, n_priors, n_neurons, activation_func=None, learn_rate=None, next_layer=None):
         """
         :param n_priors: int, number of input this layer receives
         :param n_neurons: int, number of neurons in this layer
@@ -17,7 +17,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         """
         # TODO: weight init
         self._neurons = [
-            Neuron(n_priors, weight_init=None, activation_func=activation_func, learn_rate=learn_rate)
+            Neuron(n_priors=n_priors, activation_func=activation_func, learn_rate=learn_rate)
             for _ in range(n_neurons)
             ]
         self._n_prior = n_priors
@@ -54,19 +54,20 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         :param y:
         :return:
         """
+        pass
 
-    def train(self, x, y, gradient=None):
-        """
-        Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
-        :param x: [float] * n_priors, input x
-        :param y: truth of y
-        :param gradient: [float] * n_neurons, calculated if not specified
-        :return: [float] * n_neurons, gradient for convenience
-        """
-        y_ = self.predict(x)
-        gradient = gradient or self.gradient(y=y, y_=y_)
-        gradient = [n.train(x=x, y=y, y_=y_, g=g) for n, g in zip(self._neurons, gradient)]
-        return gradient
+    # def train(self, x, y, gradient=None):
+    #     """
+    #     Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
+    #     :param x: [float] * n_priors, input x
+    #     :param y: truth of y
+    #     :param gradient: [float] * n_neurons, calculated if not specified
+    #     :return: [float] * n_neurons, gradient for convenience
+    #     """
+    #     y_ = self.predict(x)
+    #     gradient = gradient or self.gradient(y=y, y_=y_)
+    #     gradient = [n.train(x=x, y=y, y_=y_, gradient=g) for n, g in zip(self._neurons, gradient)]
+    #     return gradient
 
     def set_next_layer(self, next_layer):
         self._next_layer = next_layer
@@ -112,8 +113,10 @@ class NetworkLayer(metaclass=abc.ABCMeta):
 
 
 class OutputNetworkLayer(NetworkLayer):
-    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
-        super(OutputNetworkLayer, self).__init__(n_priors, n_neurons, weight_init, activation_func, learn_rate)
+    def __init__(self, n_priors, n_neurons, activation_func=None, learn_rate=None):
+        super(OutputNetworkLayer, self).__init__(
+            n_priors=n_priors, n_neurons=n_neurons, activation_func=activation_func, learn_rate=learn_rate
+        )
 
     def gradient(self, y_, y=None):
         assert y_ is not None and y is not None
@@ -123,12 +126,14 @@ class OutputNetworkLayer(NetworkLayer):
     def update(self, x, y_, y=None):
         gradient = self.gradient(y_=y_, y=y)
         for n, g in zip(self._neurons, gradient):
-            n.train(x=x, g=g)
+            n.train(x=x, gradient=g)
 
 
 class HiddenNetworkLayer(NetworkLayer):
-    def __init__(self, n_priors, n_neurons, weight_init=None, activation_func=None, learn_rate=None):
-        super(HiddenNetworkLayer, self).__init__(n_priors, n_neurons, weight_init, activation_func, learn_rate)
+    def __init__(self, n_priors, n_neurons, activation_func=None, learn_rate=None):
+        super(HiddenNetworkLayer, self).__init__(
+            n_priors=n_priors, n_neurons=n_neurons, activation_func=activation_func, learn_rate=learn_rate
+        )
 
     def gradient(self, y_, y=None):
         assert y is None
@@ -142,11 +147,11 @@ class HiddenNetworkLayer(NetworkLayer):
     def update(self, x, y_, y=None):
         gradient = self.gradient(y_=y_)
         for n, g in zip(self._neurons, gradient):
-            n.train(x=x, g=g)
+            n.train(x=x, gradient=g)
 
 class Neuron:
     """
-    Basic element in neural network, with some input weights, activation function and learning rate
+    Basic element in neural network, with some input weights, an activation function and a learning rate
     """
     def __init__(self, n_priors, weight_init=None, activation_func=None, learn_rate=None):
         """
@@ -156,7 +161,7 @@ class Neuron:
         :param activation_func: lambda or function, Sigmoid by default 1/(1+exp(-x))
         """
         self._n = n_priors
-        self._weight = weight_init or np.random.rand(n_priors + 1)
+        self._weight = weight_init or np.random.rand(n_priors + 1) - 0.5
         self._activation_func = activation_func or (lambda x: 1 / (1 + np.exp(-x)))
         self._learn_rate = learn_rate or 0.01
         self.gradient = None
@@ -171,26 +176,25 @@ class Neuron:
         y = self._activation_func(s)
         return y
 
-    def train(self, x, y=None, y_=None, g=None):
+    def train(self, x, y=None, y_=None, gradient=None):
         """
         Update neuron with BP algorithm (using gradient descent)
         :param x: [float] * n_input
         :param y: float, truth
         :param y_: float, prediction result
-        :param g: gradient input
+        :param gradient: gradient input
         :return: float, gradient before update
         """
-        if g is None:
-            g = y_ * (1 - y_) * (y - y_)
-        self._weight[:-1] += self._learn_rate * g * x
-        self._weight[-1] += -self._learn_rate * g
-        self.gradient = g
-        return g
+        if gradient is None:
+            gradient = y_ * (1 - y_) * (y - y_)
+        self._weight[:-1] += self._learn_rate * gradient * x
+        self._weight[-1] += -self._learn_rate * gradient
+        self.gradient = gradient
+        return gradient
 
     def calc_gradient(self, y, y_):
-        # TODO: bound to BP?
         """
-        return output side gradient and hidden side gradient in BP
+        return output side gradient gradient in BP
         :param y: float, truth
         :param y_: float, prediction
         :return:
