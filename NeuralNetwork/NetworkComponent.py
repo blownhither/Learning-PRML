@@ -25,7 +25,7 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         self._activation_func = activation_func
         self._learn_rate = learn_rate
         self._next_layer = next_layer
-        self._save_gradient = None
+        self._saved_gradient = None
 
     def predict(self, x):
         """
@@ -45,6 +45,16 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         """
         pass
 
+    @abc.abstractmethod
+    def update(self, x, y_, y=None):
+        """
+        Always take x, y_ from outside, always calculate g by itself. X and Y_ are stored outside.
+        :param x:
+        :param y_:
+        :param y:
+        :return:
+        """
+
     def train(self, x, y, gradient=None):
         """
         Learn from input x and truth y_, following gradient (if not specified, will call self.gradient())
@@ -60,12 +70,13 @@ class NetworkLayer(metaclass=abc.ABCMeta):
 
     def set_next_layer(self, next_layer):
         self._next_layer = next_layer
+        return self            # for chaining
 
     def get_next_layer(self):
         return self._next_layer
 
     def get_saved_gradient(self):
-        return self._save_gradient
+        return self._saved_gradient
 
     def get_weight(self, i=None):
         """
@@ -82,6 +93,9 @@ class NetworkLayer(metaclass=abc.ABCMeta):
     def get_learn_rate(self):
         ans = [n.get_learn_rate() for n in self._neurons]
         return np.array(ans)
+
+    def __str__(self):
+        return str(self.shape())
 
     def shape(self):
         return {
@@ -103,8 +117,13 @@ class OutputNetworkLayer(NetworkLayer):
 
     def gradient(self, y_, y=None):
         assert y_ is not None and y is not None
-        self._save_gradient = y_ * (1 - y_) * (y - y_)
-        return self._save_gradient
+        self._saved_gradient = y_ * (1 - y_) * (y - y_)
+        return self._saved_gradient
+
+    def update(self, x, y_, y=None):
+        gradient = self.gradient(y_=y_, y=y)
+        for n, g in zip(self._neurons, gradient):
+            n.train(x=x, g=g)
 
 
 class HiddenNetworkLayer(NetworkLayer):
@@ -117,8 +136,13 @@ class HiddenNetworkLayer(NetworkLayer):
         assert isinstance(l, NetworkLayer)
         g = [np.sum(l.get_weight(i) * l.get_saved_gradient()) for i in range(self._n_neurons)]
         g *= y_ * (1 - y_)
+        self._saved_gradient = g
         return g
 
+    def update(self, x, y_, y=None):
+        gradient = self.gradient(y_=y_)
+        for n, g in zip(self._neurons, gradient):
+            n.train(x=x, g=g)
 
 class Neuron:
     """
@@ -193,7 +217,7 @@ class Neuron:
         return self._learn_rate
 
     def get_weight(self, i=None):
-        if i:
+        if i is not None:
             return self._weight[i]
         else:
             return self._weight[:-1]
