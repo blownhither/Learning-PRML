@@ -2,6 +2,11 @@ from NeuralNetwork.NetworkComponent import OutputNetworkLayer, HiddenNetworkLaye
 import numpy as np
 import pandas as pds
 
+_BPNetwork_strategy = {
+    "reg": 1,   # regularization ratio punishing complex model, 1 means no regularization
+    "act_fn": lambda x: 1 / (1 + np.exp(-x))
+}
+
 class BPNetwork():
     def __init__(self, n_input, n_output, hidden, learn_rate=0.01):
         """
@@ -65,36 +70,34 @@ class BPNetwork():
         else:
             return self._layers[i]
 
-
-def test():
-    d = pds.read_csv('Dataset/watermelon-tiny.csv')
-    d = d.sample(frac=1)
-
-    for col in d.columns:
-        c = d[col]
-        d[col] = (c - c.min()) / (c.max() - c.min())
-
-    train = d[d.columns[1:-1]]
-    truth = d[d.columns[-1]]
-    truth = pds.DataFrame({
-        0: truth == 0,
-        1: truth == 1
-    }).astype(np.int)
-
-    n = len(d)
-    m = int(n * 0.8)
-
-    b = BPNetwork(8, 2, [20,20,20], 0.5)
-    for _ in range(100):
-        b.train_many(train, truth)
-
-
-    p = np.array([b.predict(x[1]) for x in train[m:].iterrows()])
-    print("My prediction:")
-    print((p + 0.5).astype(np.int))
-    print("Answer:")
-    print(truth[m:])
-
-
 if __name__ == "__main__":
+    def test():
+        d = pds.read_csv('Dataset/watermelon-tiny.csv')
+        d = d.sample(frac=1)
+
+        for col in d.columns:
+            c = d[col]
+            d[col] = (c - c.min()) / (c.max() - c.min())
+
+        train = d[d.columns[1:-1]]
+        truth = d[d.columns[-1]]
+        truth = pds.DataFrame({
+            0: truth == 0,
+            1: truth == 1
+        }).astype(np.int)
+
+        n = len(d)
+        m = int(n * 0.8)
+
+        b = BPNetwork(8, 2, [50,50], 0.5)
+        for _ in range(100):
+            b.train_many(train, truth)
+
+
+        p = np.array([b.predict(x[1]) for x in train[m:].iterrows()])
+        print("My prediction:")
+        print((p + 0.5).astype(np.int))
+        print("Answer:")
+        print(truth[m:])
+
     test()

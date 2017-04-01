@@ -15,7 +15,6 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         :param activation_func: lambda or function, Sigmoid by default 1/(1+exp(-x))
         :param learn_rate: float, learning rate
         """
-        # TODO: weight init
         self._neurons = [
             Neuron(n_priors=n_priors, activation_func=activation_func, learn_rate=learn_rate)
             for _ in range(n_neurons)
