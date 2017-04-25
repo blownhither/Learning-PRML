@@ -35,8 +35,9 @@ def max_pool_2x2(x):
 
 
 # main function
-def run(batch_feeder):
-    assert isinstance(batch_feeder, BatchMaker)
+def run(train_batch_feeder, test_batch_feeder):
+    assert isinstance(train_batch_feeder, BatchMaker)
+    assert isinstance(test_batch_feeder, BatchMaker)
 
     x = tf.placeholder(tf.float32, [None, 784])
     y_ = tf.placeholder(tf.float32, [None, 10])
@@ -83,14 +84,16 @@ def run(batch_feeder):
     tf.global_variables_initializer().run()
     for i in range(8000):
         # batch = mnist.train.next_batch(50)
-        batch = batch_feeder.next_batch(50)
+        batch = train_batch_feeder.next_batch(50)
         if i % 100 == 0:
             train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
             print("setp %d, training accuracy %g" % (i, train_accuracy))
         train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
+    batch = test_batch_feeder.all()
     print("test accuracy %g" % accuracy.eval(feed_dict={
-        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0
+        # x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0
+        x: batch[0], y_: batch[1], keep_prob: 1.0
     }))
 
 
@@ -98,5 +101,6 @@ if __name__ == '__main__':
     # mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
     sess = tf.InteractiveSession()
 
-    b = BatchMaker(x=np.random.rand(10, 1), y_=np.random.rand(10, 1))
-    run(b)
+    train_b = BatchMaker(x=np.random.rand(10, 1), y_=np.random.rand(10, 1))
+    test_b = BatchMaker(x=np.random.rand(10, 1), y_=np.random.rand(10, 1))
+    run(train_b, test_b)

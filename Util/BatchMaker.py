@@ -19,7 +19,7 @@ class BatchMaker:
         self._y = self._y[index]
 
     def next_batch(self, size):
-        assert size < self.n
+        assert 0 < size < self.n
         if self.p + size > self.n:
             self.shuffle()
             self.p = 0
@@ -27,5 +27,8 @@ class BatchMaker:
         self.p += size
         return ret
 
-
+    def all(self):
+        self.shuffle()
+        self.p = 0
+        return self._x.copy(), self._y.copy()
 
