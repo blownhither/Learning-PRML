@@ -1,4 +1,9 @@
+<center>
 # Bayesian Classifier
+> Ch.7 *Machine Learning*, Z.H. Zhou
+</center>  
+
+
 ### 7.1 Bayesian decision theory
 There are N different labels $c_1, c_2, ..., c_N$, and mistaken $c_i$ to $c_j$ would bring a loss of $\lambda_{ij}$. Therefore, conditional loss is $$R(c_i\mid x)=\sum\lambda_{ij}P(c_j\mid x)$$
 and expected loss on decision scheme h is $R(h)=\Bbb{E}[R(h(x)\mid x)]$, which leads us to choose decision scheme as $$h(x)=\arg\min_{c} R(c\mid x)$$ 
@@ -23,12 +28,21 @@ where $D_c$ is samples datasets that belongs to category c.
 Then the MLE for $\theta$ is $$\hat\theta_c=\arg\max LL(\theta_c)$$.
 >For example, assume $p(x\mid c) \leftarrow \scr{N}(\mu_c, \delta_c^2)$, according to MLE, we have $\hat\mu_c=mean(D_c)$, $\hat\delta_c^2=std(D_c)\cdot\frac{N-1}{N}$
 
-### 7.3 Naive Bayesian Classifier
+### 7.3 Naive Bayesian Classifiers
 With **attribute conditional independence assumption**, we infer 
 $$P(c\mid \vec{x})=\frac{P(c)}{P(\vec{x})}\prod P(x_i\mid c)$$
 $$P(c)=\frac{|D_c|+1}{|D|+N}$$
 $$P(x_i\mid c)=\frac{|D_{c,x_i}|+1}{|D_c|+N_i}\ \rm{,\ for\ discrete\ attribute }$$
 $$p(x_i\mid c)=\frac{1}{\sqrt{2\pi}\sigma_{c,i}}\exp(-\frac{(x_i\mu_{c,i})^2}{2\sigma^2_{c,i}})\rm{,\ for\ continuous\ attribute\ (with\ normal\ dist)}$$
+
+### 7.4 Semi-naive Bayes Classifiers
+TODO
+
+
+### 7.5 Bayesian Network
+In graph B = < G, $\Theta$ >, every edge node1 -> node2 means node2 depends on node1. 
+> e.g. G = {1,2,3}, $\Theta$ = {1->3, 2->3}, then p(x1, x2, x3) = p(x1)p(x2)p(x3|x1, x2). In this case, 1, 2 is independent if 3 is unknown, otherwise they are dependent. We call it **marginal independence**.
+
 
 
 
