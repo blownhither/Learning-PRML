@@ -3,6 +3,9 @@ from scipy.linalg.misc import norm
 
 
 class LogisticRegressionClassifier():
+    """
+    A binary classifier based on Logistic
+    """
     def __init__(self):
         self.n_features = None
         self.n_samples = None
@@ -51,12 +54,13 @@ class LogisticRegressionClassifier():
         self.last_cost = cost
         return ret
 
-    def train(self, x, y, reg_ratio=20):
+    def train(self, x, y, reg_ratio=20, grad_ratio=0.8):
         # use row vector
         x = np.array(x)
         self.n_samples, self.n_features = x.shape
         self.x = np.concatenate((x, np.ones((self.n_samples, 1))), 1)
-        self.w = np.random.rand(self.n_features + 1)
+        self.w = np.zeros(self.n_features + 1)
+        # self.w = np.random.rand(self.n_features + 1)
 
         self.reg_ratio = reg_ratio
 
@@ -65,7 +69,7 @@ class LogisticRegressionClassifier():
         assert len(y) == self.n_samples
 
         for i in range(1000):
-            improvement = self._gradient_decrease(0.8)
+            improvement = self._gradient_decrease(grad_ratio)
 
     def predict(self, x):
         x = np.array(x)
@@ -89,11 +93,26 @@ class LogisticRegressionClassifier():
 
 
 def test():
-    l = LogisticRegressionClassifier()
-    l.train([[1, 1], [0, 0]], [1, 0], 9)
+    import pandas as pds
 
-    ret = l.predict([[1, 1], [0, 0]])
-    print(ret)
+    df = pds.read_csv('Dataset/watermelon-tiny.csv')
+
+    index = np.arange(len(df))
+    np.random.shuffle(index)
+    df = df.iloc[index]
+
+    x = df[df.columns[:-1]]
+    y = df[df.columns[-1]] - 1
+
+    l = LogisticRegressionClassifier()
+    l.train(x, y)
+    pred = l.predict(x)
+    pred = (pred > 0.5).astype(np.int)
+
+    print(y)
+    print(pred)
+
+    print(np.count_nonzero(pred == np.array(y)) / float(len(pred)))
 
 
 if __name__ == '__main__':

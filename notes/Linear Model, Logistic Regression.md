@@ -18,7 +18,7 @@ A **generalized linear model** would apply this scheme with any differentiable f
 
 
 ### 3.3 Logistic Regression
-From **logistic function** $y=\frac{1}{1+e^{-z}}$, we infer linear model $$y=\frac{1}{1+e^{-w^Tx+b}},\ln\frac{1}{1-y}=w^Tx+b$$
+In order to use z=wx+b for classification, from **logistic function** $y=\frac{1}{1+e^{-z}}$, we infer linear model $$y=\frac{1}{1+e^{-w^Tx+b}},\ln\frac{1}{1-y}=w^Tx+b$$
 the latter is called **log odds** or **logit**（对数几率）. Here y is conceived as P(x=1).
 > Though called regression, Logistic models are applied to classification problems. Its advantages includes:
 > 
@@ -26,7 +26,7 @@ the latter is called **log odds** or **logit**（对数几率）. Here y is conc
 > - It predicts class as well as probability;  
 > - It is derivable at any level
 
-Rewrite the equation in a classification problem, we have 
+Rewrite the equation in a classification problem(we now rename y as p(y=1|x)), we have 
 $$\ln\frac{p(y=1|x)}{p(y=0|x)}=w^Tx+b$$
 $$p(y=1|x)=\frac{e^{w^Tx+b}}{1+e^{w^Tx+b}}$$
 With maximum likelihood method, we infer its log likelihood as 
