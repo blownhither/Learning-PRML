@@ -6,3 +6,4 @@
 - second derivative of function (Hessian matrix) $$(\nabla^2f(x))_{ij}=\frac{\partial^2f(x)}{\partial x_i\partial x_j}$$
 - product rule on vector x, a and matrix A, B $$\frac{\partial x^Ta}{\partial x}=\frac{\partial a^Tx}{\partial x}=a$$ $$\frac{\partial AB}{\partial x}=\frac{\partial A}{\partial x}B + A\frac{\partial B}{\partial x}$$
 - derivative of inverse matrix $$\frac{\partial A^{-1}}{\partial x}=-A^{-1}\frac{\partial A}{\partial x}A^{-1}$$
+
