@@ -28,12 +28,18 @@ class LinearRegressor:
         self.w -= (self.gradient() * self.grad_ratio)
         print(self.w)
 
-    def train(self, x, y, n_batches=500, reg_ratio=10000, grad_ratio=0.001):
+    def train(self, x, y, n_batches=5000, reg_ratio=100, grad_ratio=0.001):
         self.x = np.array(x)
         self.y = np.array(y)
 
         assert self.x.ndim == 2
         self.n_samples, self.n_features = self.x.shape
+
+        for i in range(self.n_features):
+            temp = self.x[:, i]
+            temp = (temp - temp.mean() / 2.0) / (temp.max() - temp.min()) * 2
+            self.x[:, i] = temp
+
         self.x = np.concatenate((self.x, np.ones((self.n_samples, 1))), 1)
 
         self.w = np.zeros(self.n_features + 1)  # TODO: initialization?
@@ -83,8 +89,6 @@ def test():
     print(pred)
 
     accu = np.count_nonzero(pred == np.array(y)) / float(len(pred))
-    if (pred == 0).all():
-        raise Exception('?')
     print(accu)
 
 
