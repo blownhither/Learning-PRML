@@ -16,6 +16,10 @@ therefore $$\hat{w}^*=(X^TX)^{-1}X^Ty$$
 
 A **generalized linear model** would apply this scheme with any differentiable function g() s.t. $y=g^{-1}(w^Tx+b)$
 
+>
+Concerning the learning rate that guarantees **convergence**, see (Haykin, 1991)  
+learning rate < $\frac{2}{\sum{||x||_2}}$ (didn't work unless halved in experiment)  
+ref: http://een.iust.ac.ir/profs/Farrokhi/Neural%20Networks/NNSH/chapter%205.pdf
 
 ### 3.3 Logistic Regression
 In order to use z=wx+b for classification, from **logistic function** $y=\frac{1}{1+e^{-z}}$, we infer linear model $$y=\frac{1}{1+e^{-w^Tx+b}},\ln\frac{1}{1-y}=w^Tx+b$$
