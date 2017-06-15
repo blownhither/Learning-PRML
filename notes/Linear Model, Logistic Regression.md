@@ -50,6 +50,29 @@ $$\frac{\partial^2 l(\beta)}{\partial\beta\partial\beta^T}=\sum\hat{x}_i\hat{x}_
 
 
 ### 3.4 LDA
-...
+LDA attempts to cast samples to a surface where same class samples are closest and samples from different classes are distributed as far as possible.
 
+Given data set D, we have $X_i,\mu_i,\Sigma_i$, where the last is covariance matrix for class i. We project sample x to $w^Tx$, meaning we project class center to $w^T\mu_i$, and new covariance is $w^T\Sigma_iw$. Consider 2D->1D casting, we want maximize
+$$J=\frac{||w^T\mu_0-w^T\mu_1||_2^2}{w^T(\Sigma_0+\Sigma_1)w}$$
 
+We define **within-class scatter matrix** as $$S_w=\Sigma_0+\Sigma_1=\sum_x(x-\mu_0)(x-\mu_0)^T+(x-\mu_1)(x-\mu_1)^T$$
+and **between-class scatter matrix** as $$S_b=(\mu_0-\mu_1)(\mu_0-\mu_1)^T$$
+therefore $$J=\frac{w^TS_bw}{w^TS_ww}$$
+>this is called the generalized Rayleigh quotient(广义瑞利商) of $S_b$ and $S_w$
+
+Without loss of generality, we change our target to $$\min_w [-w^TS_bw], \ \ \ \rm{where\ } w^TS_ww=1$$
+
+which boils down to $$w=S_w^{-1}(\mu_0-\mu_1)$$
+
+In practice, $w=S_w^{-1}$ is computed through SVD: $S_w=U\Sigma V^T$ and $S_w^{-1}=V\Sigma^{-1}U^T$
+
+#### For multi-class classification
+$S_t$ is Global scatter matrix
+$$S_t=S_b+S_w=\sum_{i=1}^N(x-\mu)(x-\mu)$$
+$$S_w=\sum S_{w_i}$$
+$$S_{w_i}=\sum_{x\in c_i}(x-\mu_i)(x-\mu_i)^T$$
+$$S_b=S_t-S_w$$
+$$\max_w\frac{\rm{tr(W^TS_bW)}}{\rm{tr(W^TS_wW)}}$$
+therefore, 
+$$S_bW=\lambda S_wW$$
+and W is eigenvectors of the first $d'$-th max eigenvalues of $S_w^{-1}S_b$

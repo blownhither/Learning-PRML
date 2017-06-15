@@ -57,7 +57,7 @@ $$p(\hat t|\hat x,x,t,\alpha,\sigma^2)\propto \int p(\hat t,t,w|\hat x,x,\alpha,
 ### 8.1.2
 To draw a sample $\hat x$ from probabilistic graph $x_1,...,x_K$ (ordered from very parent to vary child), it is easy to imagine sample from $p(x_1)$ first and then $p(x_i|parents_i)$.  
 Moreover, to sample from $p(x_2,x_4)$ for example, we may also follow through the whole process above and discard values other than $x_2,x_4$.  
-Some probabilistic model aims at synthesis an output, which is called **generative models**. It captures causal process. e.g. produce Image from object and illumination. 
+Some probabilistic model aims at synthesis an output, which is called **generative models**. It captures causal process. e.g. produce Image from object and illumination.  
 
 
 
