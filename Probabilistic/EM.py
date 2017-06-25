@@ -1,26 +1,38 @@
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 class GMM:
-    def __init__(self, k):
+    def __init__(self, k, a=None, mu=None, sigma=None):
         """
         A GMM model generating data with distribution of $\sum{a_k \phi(y|\theta_k)}$
         :param k:
         """
         self.k = k
-        a = np.random.rand(k)
+        if a is None:
+            a = np.random.rand(k)
+        else:
+            a = np.array(a)
         self.a = a / a.sum()
-        self.mu = np.random.rand(k)
-        self.sigma = np.random.rand(k)
-        self.sigma2 = np.square(self.sigma)
         self._cum = np.cumsum(self.a)
+
+        if mu is None:
+            self.mu = np.random.rand(k)
+        else:
+            self.mu = np.array(mu)
+
+        if sigma is None:
+            self.sigma = np.random.rand(k)
+        else:
+            self.sigma = np.array(sigma)
+        self.sigma2 = np.square(self.sigma)
 
     def _choose(self, n):
         rand = np.random.rand(n)
         ret = [0] * n
         for i in range(n):
-            ret[i] = np.argwhere(rand[i] < self._cum)[-1][0]
-        return ret
+            ret[i] = np.argwhere(rand[i] < self._cum)[0][0]
+        return np.array(ret)
 
     def observe(self, n):
         """
@@ -29,6 +41,14 @@ class GMM:
         """
         index = self._choose(n)
         return np.random.normal(self.mu[index], self.sigma[index])
+
+    def observe_and_plot(self, n):
+        index = self._choose(n)
+        data = np.random.normal(self.mu[index], self.sigma[index])
+        plt.hist(data[index == 0], alpha=0.6)
+        plt.hist(data[index == 1], alpha=0.6)
+        plt.show()
+        return data
 
 
 class EM(GMM):
@@ -47,16 +67,16 @@ class EM(GMM):
         :param single_data: should be ONE single data
         :return:
         """
-        return self.sigma * np.exp(- np.square(single_data - self.mu) / 2.0 / self.sigma2) / np.sqrt(np.pi * 2) / self.sigma
+        return np.exp(- np.square(single_data - self.mu) / 2.0 / self.sigma2) / np.sqrt(np.pi * 2) / self.sigma
 
     def expectation(self):
         """
         :return: response[data_j, model_k]
         """
         response = np.zeros((self.n, self.k))
-        for i in range(self.n):
-            res = self.a * self._gaussian_density(self.data[i])
-            response[i] = res / res.sum()
+        for j in range(self.n):
+            res = self.a * self._gaussian_density(self.data[j])
+            response[j] = res / res.sum()
         return response
 
     def maximization(self, response):
@@ -92,18 +112,19 @@ class EM(GMM):
             print(err_mu, err_sigma, err_a)
 
 
-def test_GMM():
+def test_gmm():
     g = GMM(5)
     o = g.observe(1000000)
     prec = np.mean(o) - np.dot(g.a, g.mu)
     print(prec)
 
 
-def test_EM():
-    g = GMM(2)
-    data = g.observe(20000)
+def test_em():
+    g = GMM(2, [0.5, 0.5], [-1, 1], [1, 1])
+    # g.observe_and_plot(1000)
+    data = g.observe(10000)
     e = EM(2, data)
     e.fit_and_test(10000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
-    test_EM()
+    test_em()
