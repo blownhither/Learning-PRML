@@ -82,18 +82,22 @@ class EM(GMM):
 
     def _gaussian_density(self, single_data):
         """
+        Note: could possibly return 0
         :param single_data: should be ONE single data
         :return:
         """
         # return np.exp(- np.square(single_data - self.mu) / 2.0 / self.sigma2) / np.sqrt(np.pi * 2) / self.sigma
         ret = np.zeros(self.k)
         for i in range(self.k):
-            temp1 = np.power(np.linalg.det(2 * np.pi * self.sigma[:, :, i]), -0.5)
-            temp2 = np.mat(single_data - self.mu[:, i])         # as row
+            det = np.linalg.det(2 * np.pi * self.sigma[:, :, i])
+            temp1 = np.power(np.clip(det, 1e-100, 1e100), -0.5)         # TODO: use clip?
+            temp2 = np.mat(single_data - self.mu[:, i])                 # as row
             temp3 = np.exp(-0.5 * temp2 * np.linalg.pinv(self.sigma[:, :, i]) * temp2.T)
             ret[i] = temp1 * temp3
-        return ret
 
+            assert not np.any(np.isnan(ret[i])), (det, temp1, temp2, temp3, ret[i])
+
+        return ret
 
     def expectation(self):
         """
@@ -103,10 +107,16 @@ class EM(GMM):
         for j in range(self.n):
             res = self.a * self._gaussian_density(self.data[j])
             response[j] = res / res.sum()
+
+            assert not np.any(np.isnan(response[j])), (res, response[j])
+
         return response
 
     def maximization(self, response):
         r_sum = np.sum(response, 0)
+
+        assert np.all(r_sum > 0), (r_sum, response)
+
         mu = np.dot(response.T, self.data) / r_sum
         sigma2 = np.zeros((self.dim, self.dim, self.k))
         for i in range(self.k):
@@ -131,13 +141,11 @@ class EM(GMM):
         print(err_mu, err_sigma, err_a)
 
     def fit_and_test(self, n_iter, mu, sigma, a):
+        self.test(mu, sigma, a)
         for i in range(n_iter):
             self.maximization(self.expectation())
-            if i % 10 == 0:
-                err_mu = np.linalg.norm(self.mu - mu)
-                err_sigma = np.linalg.norm(self.sigma - sigma)
-                err_a = np.linalg.norm(self.a - a)
-                print(i, ":", err_mu, err_sigma, err_a)
+            if i % 1 == 0:
+                self.test(mu, sigma, a)
 
 
 def test_gmm():
@@ -151,7 +159,7 @@ def test_em():
     e = np.eye(2, 2)
     g = GMM(2, 2)
     # g.observe_and_plot(1000)
-    data = g.observe(20000)
+    data = g.observe(10000)
     e = EM(2, 2, data)
     e.fit_and_test(10000, g.mu, g.sigma, g.a)
 
