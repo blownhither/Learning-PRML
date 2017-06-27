@@ -1,5 +1,5 @@
 import numpy as np
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 
 
 def rand_positive(n):
@@ -40,23 +40,29 @@ class GMM:
             assert self.sigma.shape == (dim, dim, k)
         self.sigma2 = np.square(self.sigma)
 
+        self.index = None
+
     def _choose(self, n):
         rand = np.random.rand(n)
         ret = [0] * n
         for i in range(n):
             ret[i] = np.argwhere(rand[i] < self._cum)[0][0]
+        self.index = ret
         return np.array(ret)
 
     def observe(self, n):
         """
-        Get n randomly generated observations from GMM model
+        Get n randomly generated observations from GMM model (row-wise)
         :return: np.array, shape=(n, dim)
         """
         index = self._choose(n)
         ret = np.zeros((n, self.dim))
-        for i in index:
-            ret[i] = np.random.multivariate_normal(self.mu[:, i], self.sigma[:, :, i])
+        for i, v in enumerate(index):
+            ret[i, :] = np.random.multivariate_normal(self.mu[:, v], self.sigma[:, :, v])
         return ret
+
+    def get_hidden_var(self):
+        return self.index.copy()
 
     # def observe_and_plot(self, n):
     #     index = self._choose(n)
@@ -77,19 +83,19 @@ class EM(GMM):
         super().__init__(k, dim)
         self.data = data
         assert data.shape[1] == dim
-
         self.n = len(data)
 
     def _gaussian_density(self, single_data):
         """
         Note: could possibly return 0
-        :param single_data: should be ONE single data
+        :param single_data: should be ONE single data (dim,)
         :return:
         """
         # return np.exp(- np.square(single_data - self.mu) / 2.0 / self.sigma2) / np.sqrt(np.pi * 2) / self.sigma
         ret = np.zeros(self.k)
         for i in range(self.k):
             det = np.linalg.det(2 * np.pi * self.sigma[:, :, i])
+
             temp1 = np.power(np.clip(det, 1e-100, 1e100), -0.5)         # TODO: use clip?
             temp2 = np.mat(single_data - self.mu[:, i])                 # as row
             temp3 = np.exp(-0.5 * temp2 * np.linalg.pinv(self.sigma[:, :, i]) * temp2.T)
@@ -106,7 +112,7 @@ class EM(GMM):
         response = np.zeros((self.n, self.k))
         for j in range(self.n):
             res = self.a * self._gaussian_density(self.data[j])
-            response[j] = res / res.sum()
+            response[j, :] = res / np.clip(res.sum(), 1e-100, 1e100)    # TODO: use clip?
 
             assert not np.any(np.isnan(response[j])), (res, response[j])
 
@@ -114,15 +120,21 @@ class EM(GMM):
 
     def maximization(self, response):
         r_sum = np.sum(response, 0)
+        # assert np.all(r_sum > 0), (r_sum, response)
+        r_sum = np.clip(r_sum, 1e-100, 1e100)
 
-        assert np.all(r_sum > 0), (r_sum, response)
+        mu = np.zeros((self.dim, self.k))
+        for i in range(self.k):
+            mu[:, i] = np.dot(self.data.T, response[:, i]) / r_sum[i]
 
-        mu = np.dot(response.T, self.data) / r_sum
         sigma2 = np.zeros((self.dim, self.dim, self.k))
         for i in range(self.k):
-            sigma2[i] = np.dot(response[:, i], np.square(self.data - mu[:, i]))
-            # sigma2[i] = np.dot(response[:, i], np.square(self.data - self.mu[:, i]))
-        sigma2 /= r_sum
+            temp = np.zeros((self.dim, self.dim))
+            for j in range(self.n):
+                centered = (self.data[j] - mu[:, i]).reshape((self.dim, 1))
+                temp += response[j, i] * np.dot(centered, centered.T)
+            sigma2[:, :, i] = temp / r_sum[i]
+
         a = r_sum / self.n
 
         self.mu = mu
@@ -149,19 +161,23 @@ class EM(GMM):
 
 
 def test_gmm():
-    g = GMM(5)
-    o = g.observe(1000000)
-    prec = np.mean(o) - np.dot(g.a, g.mu)
+    g = GMM(5, 1)
+    o = g.observe(10000)
+    prec = np.mean(o, 0) - np.dot(g.a, g.mu.T)
     print(prec)
 
+def draw_hidden(g, data):
+    index = g.get_hidden_var()
+    for type in set(index):
+        data[index == type]
 
 def test_em():
-    e = np.eye(2, 2)
-    g = GMM(2, 2)
+    # e = np.eye(2, 2)
+    g = GMM(3, 2)
     # g.observe_and_plot(1000)
-    data = g.observe(10000)
-    e = EM(2, 2, data)
-    e.fit_and_test(10000, g.mu, g.sigma, g.a)
+    data = g.observe(1000)
+    e = EM(3, 2, data)
+    e.fit_and_test(1000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
     test_em()
