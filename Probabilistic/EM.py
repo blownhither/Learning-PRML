@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 def rand_positive(n):
@@ -8,7 +7,7 @@ def rand_positive(n):
     :param n: mat size
     :return: np.array
     """
-    ret = np.random.random((n, n))
+    ret = (np.random.random((n, n)) - 0.5) * 2
     return np.dot(ret.T, ret)
 
 
@@ -47,8 +46,8 @@ class GMM:
         ret = [0] * n
         for i in range(n):
             ret[i] = np.argwhere(rand[i] < self._cum)[0][0]
-        self.index = ret
-        return np.array(ret)
+        self.index = np.array(ret)
+        return self.index
 
     def observe(self, n):
         """
@@ -153,11 +152,23 @@ class EM(GMM):
         print(err_mu, err_sigma, err_a)
 
     def fit_and_test(self, n_iter, mu, sigma, a):
-        self.test(mu, sigma, a)
+        # self.test(mu, sigma, a)
         for i in range(n_iter):
             self.maximization(self.expectation())
             if i % 1 == 0:
-                self.test(mu, sigma, a)
+                # self.test(mu, sigma, a)
+                print(self.log_likelihood())
+
+    def log_likelihood(self):
+        """
+        Log likelihood for evaluation
+        :return: double
+        """
+        ret = 0
+        for i in range(self.n):
+            temp = np.dot(self.a, self._gaussian_density(self.data[i]))
+            ret += np.log(np.clip(temp, 1e-100, 1e100))
+        return ret
 
 
 def test_gmm():
@@ -166,18 +177,25 @@ def test_gmm():
     prec = np.mean(o, 0) - np.dot(g.a, g.mu.T)
     print(prec)
 
+
 def draw_hidden(g, data):
+    from matplotlib import pyplot as plt, cm
+    color = cm.rainbow(np.linspace(0, 0.85, g.k))
     index = g.get_hidden_var()
-    for type in set(index):
-        data[index == type]
+    for i in range(g.k):
+        xy = data[index == i, :]
+        plt.scatter(xy[:, 0], xy[:, 1], alpha=0.4, color=color[i], marker='+')
+    plt.show()
+
 
 def test_em():
     # e = np.eye(2, 2)
     g = GMM(3, 2)
     # g.observe_and_plot(1000)
-    data = g.observe(1000)
-    e = EM(3, 2, data)
-    e.fit_and_test(1000, g.mu, g.sigma, g.a)
+    data = g.observe(10000)
+    draw_hidden(g, data)
+    # e = EM(3, 2, data)
+    # e.fit_and_test(1000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
     test_em()
