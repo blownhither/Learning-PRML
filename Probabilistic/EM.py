@@ -37,7 +37,6 @@ class GMM:
         else:
             self.sigma = np.array(sigma)
             assert self.sigma.shape == (dim, dim, k)
-        self.sigma2 = np.square(self.sigma)
 
         self.index = None
 
@@ -90,7 +89,6 @@ class EM(GMM):
         :param single_data: should be ONE single data (dim,)
         :return:
         """
-        # return np.exp(- np.square(single_data - self.mu) / 2.0 / self.sigma2) / np.sqrt(np.pi * 2) / self.sigma
         ret = np.zeros(self.k)
         for i in range(self.k):
             det = np.linalg.det(2 * np.pi * self.sigma[:, :, i])
@@ -122,23 +120,22 @@ class EM(GMM):
         # assert np.all(r_sum > 0), (r_sum, response)
         r_sum = np.clip(r_sum, 1e-100, 1e100)
 
-        mu = np.zeros((self.dim, self.k))
-        for i in range(self.k):
-            mu[:, i] = np.dot(self.data.T, response[:, i]) / r_sum[i]
+        mu = np.dot(self.data.T, response) / r_sum
 
-        sigma2 = np.zeros((self.dim, self.dim, self.k))
+
+
+        sigma = np.zeros((self.dim, self.dim, self.k))
         for i in range(self.k):
             temp = np.zeros((self.dim, self.dim))
             for j in range(self.n):
                 centered = (self.data[j] - mu[:, i]).reshape((self.dim, 1))
-                temp += response[j, i] * np.dot(centered, centered.T)
-            sigma2[:, :, i] = temp / r_sum[i]
+                temp += response[j, i] * np.outer(centered, centered)
+            sigma[:, :, i] = temp / r_sum[i]
 
         a = r_sum / self.n
 
         self.mu = mu
-        self.sigma2 = sigma2
-        self.sigma = np.sqrt(sigma2)
+        self.sigma = sigma
         self.a = a
 
     def fit(self, n_iter=100):
@@ -156,7 +153,7 @@ class EM(GMM):
         for i in range(n_iter):
             self.maximization(self.expectation())
             if i % 1 == 0:
-                # self.test(mu, sigma, a)
+                self.test(mu, sigma, a)
                 print(self.log_likelihood())
 
     def log_likelihood(self):
@@ -192,10 +189,10 @@ def test_em():
     # e = np.eye(2, 2)
     g = GMM(3, 2)
     # g.observe_and_plot(1000)
-    data = g.observe(10000)
-    draw_hidden(g, data)
-    # e = EM(3, 2, data)
-    # e.fit_and_test(1000, g.mu, g.sigma, g.a)
+    data = g.observe(1000)
+    # draw_hidden(g, data)
+    e = EM(3, 2, data)
+    e.fit_and_test(1000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
     test_em()
