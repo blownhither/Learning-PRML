@@ -152,7 +152,7 @@ class EM(GMM):
         # self.test(mu, sigma, a)
         for i in range(n_iter):
             self.maximization(self.expectation())
-            if i % 1 == 0:
+            if i % 5 == 0:
                 self.test(mu, sigma, a)
                 print(self.log_likelihood())
 
@@ -179,20 +179,40 @@ def draw_hidden(g, data):
     from matplotlib import pyplot as plt, cm
     color = cm.rainbow(np.linspace(0, 0.85, g.k))
     index = g.get_hidden_var()
-    for i in range(g.k):
+    for i in range(1):
         xy = data[index == i, :]
         plt.scatter(xy[:, 0], xy[:, 1], alpha=0.4, color=color[i], marker='+')
-    plt.show()
+    return plt
 
+
+def draw_dist(mu, sigma):
+    sigma = np.array(sigma)
+    mu = np.array(mu)
+
+    from matplotlib import pyplot as plt, mlab
+    delta = 0.025
+    x = np.arange(-1, 1, delta)
+    y = np.arange(-1, 1, delta)
+    X, Y = np.meshgrid(x, y)
+    Z = mlab.bivariate_normal(X, Y, mux=mu[0], muy=mu[1], sigmax=sigma[0, 0], sigmay=sigma[1, 1], sigmaxy=sigma[0, 1] ** 2)
+    # plt.figure()
+    CS = plt.contour(X, Y, Z, 5)
+    plt.clabel(CS, inline=1, fontsize=10)
+    # plt.title('Simplest default with labels')
+    # plt.show()
+    return plt
 
 def test_em():
     # e = np.eye(2, 2)
-    g = GMM(3, 2)
+    g = GMM(5, 2)
+    data = g.observe(10000)
+    draw_hidden(g, data)
+    plt = draw_dist(g.mu[:, 0], g.sigma[:, :, 0])
+    plt.show()
     # g.observe_and_plot(1000)
-    data = g.observe(1000)
-    # draw_hidden(g, data)
-    e = EM(3, 2, data)
-    e.fit_and_test(1000, g.mu, g.sigma, g.a)
+
+    # e = EM(5, 2, data)
+    # e.fit_and_test(1000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
     test_em()
