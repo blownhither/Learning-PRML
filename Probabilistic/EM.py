@@ -1,4 +1,7 @@
 import numpy as np
+"""
+This file runs a EM algorithm on GMM model and provides several visualization functions.
+"""
 
 
 def rand_positive(n):
@@ -15,36 +18,40 @@ class GMM:
     def __init__(self, k=2, dim=2, a=None, mu=None, sigma=None):
         """
         A GMM model generating data with distribution of $\sum{a_k \phi(y|\theta_k)}$
-        :param k:
         """
-        self.k = k
-        self.dim = dim
-        if a is None:
+        self.k = k                  # number of normal dists
+        self.dim = dim              # number of dims in each normal dist
+        if a is None:               # prior of each normal dist (sum to 1)
             a = np.random.random(k)
         else:
             a = np.array(a)
         self.a = a / a.sum()
         self._cum = np.cumsum(self.a)
 
-        if mu is None:
+        if mu is None:              # mu for each normal dist, col-wise shape=(dim, k)
             self.mu = np.random.random((dim, k))
         else:
             self.mu = np.array(mu)
             assert self.mu.shape == (dim, k)
 
-        if sigma is None:
+        if sigma is None:           # sigma for each normal dist, layer-wise shape=(dim, dim, k)
             self.sigma = np.dstack([rand_positive(dim) for _ in range(k)])
         else:
             self.sigma = np.array(sigma)
             assert self.sigma.shape == (dim, dim, k)
 
-        self.index = None
+        self.index = None           # class of each sample from last observation
 
     def _choose(self, n):
+        """
+        Choose n indexes from [0, k-1] according to prior a. (Result also saved in self.index)
+        :param n: number of samples
+        :return: [int] * n
+        """
         rand = np.random.rand(n)
         ret = [0] * n
         for i in range(n):
-            ret[i] = np.argwhere(rand[i] < self._cum)[0][0]
+            ret[i] = np.argwhere(np.array(rand[i] < self._cum, dtype=bool))[0][0]
         self.index = np.array(ret)
         return self.index
 
@@ -54,29 +61,22 @@ class GMM:
         :return: np.array, shape=(n, dim)
         """
         index = self._choose(n)
-        ret = np.zeros((n, self.dim))
+        data = np.zeros((n, self.dim))
         for i, v in enumerate(index):
-            ret[i, :] = np.random.multivariate_normal(self.mu[:, v], self.sigma[:, :, v])
-        return ret
+            data[i, :] = np.random.multivariate_normal(self.mu[:, v], self.sigma[:, :, v])
+        return data
 
     def get_hidden_var(self):
         return self.index.copy()
-
-    # def observe_and_plot(self, n):
-    #     index = self._choose(n)
-    #     data = np.random.normal(self.mu[index], self.sigma[index])
-    #     plt.hist(data[index == 0], alpha=0.6)
-    #     plt.hist(data[index == 1], alpha=0.6)
-    #     plt.show()
-    #     return data
 
 
 class EM(GMM):
     def __init__(self, k, dim, data):
         """
         Here EM is a GMM model undergoing iterative updating
-        :param k:
-        :param data:
+        :param k:   should be same with GMM observed
+        :param dim: should be same with GMM observed
+        :param data:observations, [float] * (n, dim)
         """
         super().__init__(k, dim)
         self.data = data
@@ -91,76 +91,75 @@ class EM(GMM):
         """
         ret = np.zeros(self.k)
         for i in range(self.k):
-            det = np.linalg.det(2 * np.pi * self.sigma[:, :, i])
-
-            temp1 = np.power(np.clip(det, 1e-100, 1e100), -0.5)         # TODO: use clip?
-            temp2 = np.mat(single_data - self.mu[:, i])                 # as row
+            det = np.linalg.det(np.array(2 * np.pi * self.sigma[:, :, i]))
+            temp1 = np.power(np.clip(det, 1e-100, 1e100), -0.5)
+            temp2 = np.mat(single_data - self.mu[:, i])
             temp3 = np.exp(-0.5 * temp2 * np.linalg.pinv(self.sigma[:, :, i]) * temp2.T)
             ret[i] = temp1 * temp3
-
-            assert not np.any(np.isnan(ret[i])), (det, temp1, temp2, temp3, ret[i])
-
+            # assert not np.any(np.isnan(ret[i])), (det, temp1, temp2, temp3, ret[i])
         return ret
 
     def expectation(self):
         """
+        Expectation step of EM algorithm, return response
         :return: response[data_j, model_k]
         """
         response = np.zeros((self.n, self.k))
         for j in range(self.n):
             res = self.a * self._gaussian_density(self.data[j])
-            response[j, :] = res / np.clip(res.sum(), 1e-100, 1e100)    # TODO: use clip?
-
-            assert not np.any(np.isnan(response[j])), (res, response[j])
-
+            response[j, :] = res / np.clip(res.sum(), 1e-100, 1e100)
+            # assert not np.any(np.isnan(response[j])), (res, response[j])
         return response
 
     def maximization(self, response):
+        """
+        Maximization step of EM algorithm, update param
+        :param response: given by expectation()
+        :return: no return
+        """
         r_sum = np.sum(response, 0)
         # assert np.all(r_sum > 0), (r_sum, response)
         r_sum = np.clip(r_sum, 1e-100, 1e100)
 
+        # calculate new value of normal dist params
         mu = np.dot(self.data.T, response) / r_sum
-
-
-
         sigma = np.zeros((self.dim, self.dim, self.k))
         for i in range(self.k):
             temp = np.zeros((self.dim, self.dim))
             for j in range(self.n):
-                centered = (self.data[j] - mu[:, i]).reshape((self.dim, 1))
+                centered = (self.data[j] - mu[:, i]).reshape((self.dim, 1))     # based on new mu, not old mu
                 temp += response[j, i] * np.outer(centered, centered)
             sigma[:, :, i] = temp / r_sum[i]
-
         a = r_sum / self.n
 
+        # update stored dist param
         self.mu = mu
         self.sigma = sigma
         self.a = a
 
     def fit(self, n_iter=100):
+        """ Dummy fit """
         for i in range(n_iter):
             self.maximization(self.expectation())
 
     def test(self, mu, sigma, a):
+        """ Calculate norm diff between stored dist param and given truth """
         err_mu = np.linalg.norm(self.mu - mu)
         err_sigma = np.linalg.norm(self.sigma - sigma)
         err_a = np.linalg.norm(self.a - a)
         print(err_mu, err_sigma, err_a)
 
     def fit_and_test(self, n_iter, mu, sigma, a):
-        # self.test(mu, sigma, a)
+        """ Fit and print accuracy a few rounds """
         for i in range(n_iter):
-            self.maximization(self.expectation())
             if i % 5 == 0:
+                print("iter ", i)
                 self.test(mu, sigma, a)
                 print(self.log_likelihood())
+            self.maximization(self.expectation())
 
     def log_likelihood(self):
-        """
-        Log likelihood for evaluation
-        :return: double
-        """
+        """ Log likelihood for evaluation """
         ret = 0
         for i in range(self.n):
             temp = np.dot(self.a, self._gaussian_density(self.data[i]))
@@ -169,23 +168,30 @@ class EM(GMM):
 
 
 def test_gmm():
+    """ Unittest """
     g = GMM(5, 1)
     o = g.observe(10000)
-    prec = np.mean(o, 0) - np.dot(g.a, g.mu.T)
-    print(prec)
+    precision = np.mean(o, 0) - np.dot(g.a, g.mu.T)
+    print(precision)
 
 
-def draw_hidden(g, data):
+def plot_hidden(g, data):
+    """
+    scatter plot 2-d samples, colored by classes
+    :return plt module reference
+    """
     from matplotlib import pyplot as plt, cm
-    color = cm.rainbow(np.linspace(0, 0.85, g.k))
+    assert g.dim == 2
+    colors = cm.rainbow(np.linspace(0, 0.85, g.k))
     index = g.get_hidden_var()
-    for i in range(1):
+    for i in range(g.k):
         xy = data[index == i, :]
-        plt.scatter(xy[:, 0], xy[:, 1], alpha=0.4, color=color[i], marker='+')
+        plt.scatter(xy[:, 0], xy[:, 1], alpha=0.4, color=colors[i], marker='+')
     return plt
 
 
-def draw_dist(mu, sigma):
+def plot_dist(mu, sigma):
+    """ Contour plot of one normal distribution """
     sigma = np.array(sigma)
     mu = np.array(mu)
 
@@ -193,26 +199,26 @@ def draw_dist(mu, sigma):
     delta = 0.025
     x = np.arange(-1, 1, delta)
     y = np.arange(-1, 1, delta)
-    X, Y = np.meshgrid(x, y)
-    Z = mlab.bivariate_normal(X, Y, mux=mu[0], muy=mu[1], sigmax=sigma[0, 0], sigmay=sigma[1, 1], sigmaxy=sigma[0, 1] ** 2)
-    # plt.figure()
-    CS = plt.contour(X, Y, Z, 5)
-    plt.clabel(CS, inline=1, fontsize=10)
-    # plt.title('Simplest default with labels')
-    # plt.show()
+    axis_x, axis_y = np.meshgrid(x, y)
+    dist = mlab.bivariate_normal(axis_x, axis_y, mux=mu[0], muy=mu[1],
+                                 sigmax=sigma[0, 0], sigmay=sigma[1, 1], sigmaxy=sigma[0, 1] ** 2)
+    contour = plt.contour(axis_x, axis_y, dist, 5)
+    plt.clabel(contour, inline=1, fontsize=10)
     return plt
 
+
 def test_em():
-    # e = np.eye(2, 2)
+    """ Unittest """
     g = GMM(5, 2)
-    data = g.observe(10000)
-    draw_hidden(g, data)
-    plt = draw_dist(g.mu[:, 0], g.sigma[:, :, 0])
-    plt.show()
+    data = g.observe(1000)
+    # draw_hidden(g, data)
+    # plt = draw_dist(g.mu[:, 0], g.sigma[:, :, 0])
+    # plt.show()
     # g.observe_and_plot(1000)
 
-    # e = EM(5, 2, data)
-    # e.fit_and_test(1000, g.mu, g.sigma, g.a)
+    e = EM(5, 2, data)
+    e.fit_and_test(1000, g.mu, g.sigma, g.a)
+
 
 if __name__ == '__main__':
     test_em()
