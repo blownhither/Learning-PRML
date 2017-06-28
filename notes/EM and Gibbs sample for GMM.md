@@ -60,6 +60,19 @@ $$n_k=\sum_j\gamma_{jk}, \sum_k n_k=N$$
 
 
 
+---
+# Gibbs Sampler for GMM
+For mathematical convenience, we assume
+$$c_i|\vec{\pi}\sim\rm{Discrete}(\vec{\pi})\ \ \ \rm{ or\ } P(c_i=k)=\pi_k$$
+$$\vec{y_i}|c_i=k;\Theta\sim\rm{Gaussian}(\cdot|\theta_k)$$
+$$\vec{\pi}|\alpha \sim \rm{Dirichlet}(\cdot | \frac{\alpha_i}{K},... )$$
+$$\Theta\sim\cal{G}_0$$
+> $$\rm{Dirichlet}(x)=\frac{1}{B(\alpha)}\prod_i x_i^{\alpha_i-1}$$
+> $\cal{G}_O$ is shorthand of
+> $$\Sigma_k\sim\rm{Inverse-Wishart}_{v_0}(\Lambda_0^{-1})$$
+> $$\vec{\mu}_k\sim\rm{Gaussian}(\vec{\mu}_0,\Sigma_k/\kappa_0)$$
+> 
+
 
 
 
