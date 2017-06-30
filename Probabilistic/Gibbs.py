@@ -16,13 +16,14 @@ class Gibbs:
         self.a = 1.0                # TODO: setting
         self.a0 = self.a
         self.ak = self.a0 / self.k
-        self.k0 = 1.0               # TODO: ?
+        self.k0 = 5.0               # TODO: ?
         self.kn = self.k0 + self.n
-        self.v0 = k + 2             # (v0 > dim + 1)must holds
+        self.v0 = k + 3             # (v0 > dim + 1)must holds
         # self.vn = self.v0 + self.n
-        self.m0 = np.ones(dim)     # TODO: check
+        # self.m0 = np.ones(dim)     # TODO: check
+        self.m0 = np.mean(data, 0)
         # self.mn = (self.k0 * self.m0 + self.n * np.mean(data, 0)) / self.kn
-        self.s0 = np.array([[1, 0], [0, 1]])
+        self.s0 = np.eye(dim)
         # s = self._cov(data)
         # self.sn = self.s0 + s + self.k0 * self.n / (self.k0 + self.n) * self._cov(
         #     (np.mean(data, 0) - self.m0).reshape((1, -1)))
@@ -45,40 +46,46 @@ class Gibbs:
         """
         term1 in Gibbs sampling is $P(z_i=k | z_{\i}, \alpha)$
         """
-        self.freq[self.z[omit]] -= 1
+        # ret = np.ones(self.k, dtype=np.float) / (self.n - 1 + self.a0)
+        # component = self.z[omit]
+        # ret[component] *= self.freq[component] - 1 + self.ak
+        index = self.z[omit]
+        self.freq[index] -= 1
         ret = (self.freq + self.ak) / (self.n + self.a - 1)
-        self.freq[self.z[omit]] += 1
+        self.freq[index] += 1
         return ret
-
-        # def _student(self, mu, sigma, freedom):
-        # p = sigma.shape[0]
-        # t1 = gamma((freedom + p) / 2.0)
-        # t2 = gamma(freedom / 2.0) * np.power(freedom * np.pi, p / 2.0) * np.sqrt(np.linalg.det(sigma))
-        # center =
-        # t3 = np.power(1 + )
 
     def _term2(self, k, x_star):
         """
         term2 in Gibbs sampling is $p(x_i | x_{k\i}, \beta)$
         """
-        index = np.where(self.z == k)
+        index = (self.z == k)
+        if np.count_nonzero(index) == 0:
+            return 0
         data = self.data[index]
         n = data.shape[0]
         kn = self.k0 + n
         vn = self.v0 + n
-        sn = self.s0 + self._cov(data) + self._cov_single(data.mean(0) - self.m0) * self.k0 * n / (self.k0 + n)
-        sn_star = sn + self._cov_single(x_star)
+        data_cov = self._cov(data)
+        data_mean = np.mean(data, 0)
+        sn = self.s0 + data_cov + self._cov_single(data_mean - self.m0) * self.k0 * n / (self.k0 + n)
 
-        # serial = list(map(gamma, np.arange((vn + 1 - self.dim) / 2.0, (vn + 1.1) / 2.0, 0.5)))
-        # assert len(serial) == self.dim + 1
-        # prod = np.prod(serial)
+        assert not np.isnan(sn).any(), (self.s0, data_cov, n, data, index)
 
-        numerator1 = np.power(np.pi, -self.dim / 2.0)
-        numerator3 = np.prod(np.arange((vn + 1 - self.dim) / 2.0, vn / 2.0 - 1, 1))
-        # numerator2 = np.power(np.linalg.det(sn_star), -(vn + 1) / 2.0)
-        # denominator2 = np.power(np.linalg.det(sn), -vn / 2.0)
+        data_mean_star = (data_mean * n + x_star) / (n + 1)
+        sn_star = self.s0 + data_cov + self._cov_single(x_star) + self._cov_single(data_mean_star - self.m0) * self.k0 * n / (self.k0 + n)
+
+        numerator1 = np.power(np.pi * (kn + 1) / kn, -self.dim / 2.0)
         temp = np.linalg.det(sn_star)
         numerator2 = np.power(temp / np.linalg.det(sn), -vn / 2.0) * np.power(temp, -0.5)
+
+        assert not np.isnan(numerator2), (sn, sn_star, data_cov, self.z, k)
+        assert self.dim % 2 == 0
+        # numerator3 = gamma((vn + 1) / 2.0) / gamma((vn + 1 - self.dim) / 2.0)
+        numerator3 = np.prod((vn - np.arange(1, 1.1 + self.dim, 2)) / 2)
+
+        assert not np.isnan(numerator1 * numerator2 * numerator3), (numerator1, numerator2, numerator3)
+
         return numerator1 * numerator2 * numerator3
 
     # def fit(self, max_iter):
@@ -114,18 +121,19 @@ class Gibbs:
 
     def test(self, mu_t, sigma_t, pi_t):
         mu, sigma, pi = self._form_dist()
+        print(mu)
         err_mu = np.linalg.norm(mu_t - mu)
         err_sigma = np.linalg.norm(sigma_t - sigma)
         err_pi = np.linalg.norm(pi_t - pi)
         print(err_mu, err_sigma, err_pi)
+        self.log_likelihood(mu, sigma, pi)
         return err_mu, err_sigma, err_pi
 
     def fit_and_test(self, max_iter, mu_t, sigma_t, pi_t):
         for _iter in range(max_iter):
             if _iter % 5 == 0:
-                print(_iter)
+                print('\n%d' % _iter)
                 self.test(mu_t, sigma_t, pi_t)
-                self.log_likelihood()
 
             count = 0
             for i in range(self.n):
@@ -141,6 +149,8 @@ class Gibbs:
                 cum = np.cumsum(t1 * t2)
                 cum /= cum[-1]
 
+                assert cum[-1] == 1.0, (t1, t2)
+
                 k_new = np.where(np.random.random() < cum)[0][0]
                 if k_new != last:
                     count += 1
@@ -148,10 +158,9 @@ class Gibbs:
                 self.freq[k_new] += 1
 
                 assert self.n == self.freq.sum()
-            print(count)
+            print(count, end=',')
 
-    def log_likelihood(self):
-        mu, sigma, pi = self._form_dist()
+    def log_likelihood(self, mu, sigma, pi):
         mat = np.zeros((self.n, self.k))
         for i in range(self.k):
             dist = multivariate_normal(mu[:, i], sigma[:, :, i])
@@ -164,9 +173,13 @@ class Gibbs:
 
 
 def test():
-    g = GMM(3, 2)
+    g = GMM(2, 2)
+    # g = GMM(2, 2, mu=np.array([[1, 1], [-1, -1]]), sigma=np.dstack([(np.eye(2)), np.eye(2)]))
     data = g.observe(500)
-    gb = Gibbs(3, 2, data)
+    # data = np.array([[10, 10], [-10, -10]]).repeat(20, 0)
+    gb = Gibbs(2, 2, data)
+    print('Target log_likelihood: ')
+    gb.log_likelihood(g.mu, g.sigma, g.a)
     gb.fit_and_test(1000, g.mu, g.sigma, g.a)
 
 if __name__ == '__main__':
