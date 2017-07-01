@@ -73,50 +73,50 @@ class Gibbs:
 
         return ret
 
-    # def _form_dist(self):
-    #     mu = np.zeros((self.dim, self.k))
-    #     sigma = np.zeros((self.dim, self.dim, self.k))
-    #     pi = np.zeros(self.k)
-    #     for i in range(self.k):
-    #         c = self.data[self.z == i]
-    #         pi[i] = (len(c) / float(self.n))
-    #         mu[:, i] = c.mean(0)
-    #         sigma[:, :, i] = np.cov(c, rowvar=False)
-    #     return np.array(mu), np.array(sigma), np.array(pi)
-
     def _form_dist(self):
         mu = np.zeros((self.dim, self.k))
         sigma = np.zeros((self.dim, self.dim, self.k))
-        _pi = np.bincount(self.z) / float(self.n)
         pi = np.zeros(self.k)
-        pi[:len(_pi)] = _pi
         for i in range(self.k):
-            mu[:, i], sigma[:, :, i] = self._update_component(i)
+            c = self.data[self.z == i]
+            pi[i] = (len(c) / float(self.n))
+            mu[:, i] = c.mean(0)
+            sigma[:, :, i] = np.cov(c, rowvar=False)
         return mu, sigma, pi
 
-    def _update_component(self, i):
-        index = self.z == i
-        data = self.data[index]
-        s = len(data)
-        if s == 0:
-            sigma = wishart.rvs(df=self.dim, scale=np.linalg.inv(self.s0))
-            mu = np.random.multivariate_normal(self.m0, sigma)
-        else:
-            data_sum = data.sum(0)
-            data_mean = data_sum / s
-
-            b_term = self._cov(data - data_mean)
-            m_dash = (self.k0 * self.m0 + data_sum) / (s + self.k0)
-            # c_dash = s + 0.1
-            a_dash = s + self.dim
-            b_dash = self.s0 + b_term + s / (self.dim * s + 1) * self._cov_single(data_mean - self.m0)
-
-            sigma = wishart.rvs(df=a_dash, scale=np.linalg.inv(b_dash))
-            if self.dim > 1:
-                mu = np.random.multivariate_normal(m_dash, sigma)
-            else:
-                mu = np.random.normal(m_dash, sigma)
-        return mu, sigma
+    # def _form_dist(self):
+    #     mu = np.zeros((self.dim, self.k))
+    #     sigma = np.zeros((self.dim, self.dim, self.k))
+    #     _pi = np.bincount(self.z) / float(self.n)
+    #     pi = np.zeros(self.k)
+    #     pi[:len(_pi)] = _pi
+    #     for i in range(self.k):
+    #         mu[:, i], sigma[:, :, i] = self._update_component(i)
+    #     return mu, sigma, pi
+    #
+    # def _update_component(self, i):
+    #     index = self.z == i
+    #     data = self.data[index]
+    #     s = len(data)
+    #     if s == 0:
+    #         sigma = wishart.rvs(df=self.dim, scale=np.linalg.inv(self.s0))
+    #         mu = np.random.multivariate_normal(self.m0, sigma)
+    #     else:
+    #         data_sum = data.sum(0)
+    #         data_mean = data_sum / s
+    #
+    #         b_term = self._cov(data - data_mean)
+    #         m_dash = (self.k0 * self.m0 + data_sum) / (s + self.k0)
+    #         # c_dash = s + 0.1
+    #         a_dash = s + self.dim
+    #         b_dash = self.s0 + b_term + s / (self.dim * s + 1) * self._cov_single(data_mean - self.m0)
+    #
+    #         sigma = wishart.rvs(df=a_dash, scale=np.linalg.inv(b_dash))
+    #         if self.dim > 1:
+    #             mu = np.random.multivariate_normal(m_dash, sigma)
+    #         else:
+    #             mu = np.random.normal(m_dash, sigma)
+    #     return mu, sigma
 
     def test(self):
         mu, sigma, pi = self._form_dist()
@@ -124,11 +124,10 @@ class Gibbs:
 
     def fit_and_test(self, max_iter):
         for _iter in range(max_iter):
-            if _iter % 2 == 0:
-                print(self._form_dist())
-                # print(_iter)
-                # self.test(mu_t, sigma_t, pi_t)
-
+            if _iter % 1 == 0:
+                self.test()
+                # mu, sigma, pi = self._form_dist()
+                # print(self.log_likelihood(mu, sigma, pi))
             for i in range(self.n):
                 t1 = self._term1(i)
 
@@ -161,11 +160,11 @@ class Gibbs:
 
 
 def test():
-    g = GMM(2, 1, a=[0.5, 0.5], mu=[[-2., 2.]], sigma=[[[.3, .3]]])
-    data = g.observe(20000)
-    data.tofile('Probabilistic/tmp/gibbs/data.txt', sep=' ')
-    plt = g.plot()
-    gb = Gibbs(2, 1, data[:1000])
+    g = GMM(3, 2)
+    data = g.observe(1000)
+    # data.tofile('Probabilistic/tmp/gibbs/data.txt', sep=' ')
+    # plt = g.plot()
+    gb = Gibbs(3, 2, data)
     # print('Target log-likelihood')
     # gb.log_likelihood(g.mu, g.sigma, g.a)
 

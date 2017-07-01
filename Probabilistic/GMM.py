@@ -26,7 +26,7 @@ class GMM:
         self._cum = np.cumsum(self.a)
 
         if mu is None:              # mu for each normal dist, col-wise shape=(dim, k)
-            self.mu = np.random.random((dim, k))
+            self.mu = np.random.random((dim, k)) * 2 - 1
         else:
             self.mu = np.array(mu)
             assert self.mu.shape == (dim, k)
