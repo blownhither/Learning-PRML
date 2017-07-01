@@ -1,5 +1,6 @@
 import numpy as np
 from math import gamma
+from scipy.special import gammaln
 from scipy.stats import multivariate_normal
 
 from Probabilistic.GMM import GMM, rand_positive
@@ -20,7 +21,7 @@ class Gibbs:
         self.kn = self.k0 + self.n
         self.v0 = dim + 2             # (v0 > dim + 1)must holds
         self.m0 = np.ones(dim)     # TODO: check
-        self.s0 = np.array([[1, 0], [0, 1]])
+        self.s0 = np.eye(self.dim)
 
         self.z = np.random.randint(0, k, size=self.n)
         self.freq = np.bincount(self.z)
@@ -66,12 +67,7 @@ class Gibbs:
         numerator1 = np.power(np.pi * (kn + 1) / kn, -self.dim / 2.0)
         temp = np.linalg.det(sn_star)
         numerator2 = np.power(temp / np.linalg.det(sn), -vn / 2.0) * np.power(temp, -0.5)
-        # numerator3 = np.prod((vn - np.arange(1, 1.1 + self.dim, 2)) / 2.0)
-
-        try:
-            numerator3 = gamma((vn + 1) / 2.0) / gamma((vn + 1 - self.dim) / 2.0)
-        except:
-            print(vn)
+        numerator3 = np.exp(gammaln((vn + 1) / 2.0) - gammaln((vn + 1 - self.dim) / 2.0))
         ret = numerator1 * numerator2 * numerator3
 
         return ret
@@ -89,12 +85,7 @@ class Gibbs:
 
     def test(self, mu_t, sigma_t, pi_t):
         mu, sigma, pi = self._form_dist()
-        err_mu = np.linalg.norm(mu_t - mu)
-        err_sigma = np.linalg.norm(sigma_t - sigma)
-        err_pi = np.linalg.norm(pi_t - pi)
-        print(err_mu, err_sigma, err_pi)
         self.log_likelihood(mu, sigma, pi)
-        return err_mu, err_sigma, err_pi
 
     def fit_and_test(self, max_iter, mu_t, sigma_t, pi_t):
         for _iter in range(max_iter):
@@ -102,25 +93,22 @@ class Gibbs:
                 print(_iter)
                 self.test(mu_t, sigma_t, pi_t)
 
-            count = 0
             for i in range(self.n):
                 t1 = self._term1(i)
 
                 t2 = np.zeros(self.k)
                 last = self.z[i]
                 self.freq[last] -= 1
-                self.z[i] = -1                                  # take it out
+                self.z[i] = -1
                 for k in range(self.k):
-                    t2[k] = self._term2(k, self.data[i])        # TODO: not right
+                    t2[k] = self._term2(k, self.data[i])
                 cum = np.cumsum(t1 * t2)
                 cum /= cum[-1]
 
                 k_new = np.where(np.random.random() < cum)[0][0]
-                if k_new != last:
-                    count += 1
                 self.z[i] = k_new
                 self.freq[k_new] += 1
-            print(count)
+            print(self.freq)
 
     def log_likelihood(self, mu, sigma, pi):
         # mu, sigma, pi = self._form_dist()
@@ -134,9 +122,9 @@ class Gibbs:
 
 
 def test():
-    g = GMM(3, 2)
-    data = g.observe(500)
-    gb = Gibbs(3, 2, data)
+    g = GMM(5, 2)
+    data = g.observe(1000)
+    gb = Gibbs(5, 2, data)
     print('Target log-likelihood')
     gb.log_likelihood(g.mu, g.sigma, g.a)
 
