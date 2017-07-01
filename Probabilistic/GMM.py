@@ -38,6 +38,7 @@ class GMM:
             assert self.sigma.shape == (dim, dim, k)
 
         self.index = None           # class of each sample from last observation
+        self.data = None            # last observation
 
     def _choose(self, n):
         """
@@ -61,7 +62,29 @@ class GMM:
         data = np.zeros((n, self.dim))
         for i, v in enumerate(index):
             data[i, :] = np.random.multivariate_normal(self.mu[:, v], self.sigma[:, :, v])
+        self.data = data
         return data
 
     def get_hidden_var(self):
         return self.index.copy()
+
+    def plot(self):
+        if self.dim == 2:
+            return self.plot_scatter()
+        elif self.dim == 1:
+            return self.plot_hist()
+
+    def plot_hist(self):
+        from matplotlib import pyplot as plt, cm
+        assert self.dim == 1
+        plt.hist(self.data, 30, color='g')
+        return plt
+
+    def plot_scatter(self):
+        from matplotlib import pyplot as plt, cm
+        assert self.dim == 2
+        colors = cm.rainbow(np.linspace(0, 0.85, self.k))
+        for i in range(self.k):
+            xy = self.data[self.index == i, :]
+            plt.scatter(xy[:, 0], xy[:, 1], alpha=0.4, color=colors[i], marker='+')
+        return plt
