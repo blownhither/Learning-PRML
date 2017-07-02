@@ -1,8 +1,9 @@
 import numpy as np
 from math import gamma
+from scipy.special import gammaln
 from scipy.stats import multivariate_normal
 
-from Probabilistic.GMM import GMM, rand_positive
+from Probabilistic.GMM import GMM
 
 
 class Gibbs:
@@ -13,25 +14,19 @@ class Gibbs:
         assert data.shape[1] == dim
         self.n = len(data)
 
-        self.a = 1.0                # TODO: setting
+        self.a = 1.0
         self.a0 = self.a
         self.ak = self.a0 / self.k
-        self.k0 = 5.0               # TODO: ?
+        self.k0 = 10.0
         self.kn = self.k0 + self.n
-        self.v0 = k + 3             # (v0 > dim + 1)must holds
-        # self.vn = self.v0 + self.n
-        # self.m0 = np.ones(dim)     # TODO: check
+        self.v0 = dim + 5             # (v0 > dim + 1)must holds
+        # self.m0 = np.ones(dim)
+        # self.s0 = np.ones((dim, dim))
         self.m0 = np.mean(data, 0)
-        # self.mn = (self.k0 * self.m0 + self.n * np.mean(data, 0)) / self.kn
-        self.s0 = np.eye(dim)
-        # s = self._cov(data)
-        # self.sn = self.s0 + s + self.k0 * self.n / (self.k0 + self.n) * self._cov(
-        #     (np.mean(data, 0) - self.m0).reshape((1, -1)))
-        # self.sn_det = np.power(np.linalg.det(self.sn), -self.vn / 2.0)
-
+        self.s0 = np.cov(data.T)
+        # self.s0 = np.zeros((dim, dim))
         self.z = np.random.randint(0, k, size=self.n)
         self.freq = np.bincount(self.z)
-        # self.inv_freq = self.n - self.freq
 
     def _cov(self, data):
         ret = np.zeros((self.dim, self.dim))
@@ -46,69 +41,46 @@ class Gibbs:
         """
         term1 in Gibbs sampling is $P(z_i=k | z_{\i}, \alpha)$
         """
-        # ret = np.ones(self.k, dtype=np.float) / (self.n - 1 + self.a0)
-        # component = self.z[omit]
-        # ret[component] *= self.freq[component] - 1 + self.ak
-        index = self.z[omit]
-        self.freq[index] -= 1
-        ret = (self.freq + self.ak) / (self.n + self.a - 1)
-        self.freq[index] += 1
+        self.freq[self.z[omit]] -= 1
+        ret = (self.freq + self.ak) / (self.n + self.a0 - 1)
+        self.freq[self.z[omit]] += 1
         return ret
 
     def _term2(self, k, x_star):
         """
         term2 in Gibbs sampling is $p(x_i | x_{k\i}, \beta)$
         """
-        index = (self.z == k)
-        if np.count_nonzero(index) == 0:
+        index = np.where(self.z == k)[0]
+        if len(index) == 0:
             return 0
         data = self.data[index]
         n = data.shape[0]
         kn = self.k0 + n
         vn = self.v0 + n
-        data_cov = self._cov(data)
+
+        # data_cov = self._cov(data)
+        data_cov = np.cov(data.T)
         data_mean = np.mean(data, 0)
-        sn = self.s0 + data_cov + self._cov_single(data_mean - self.m0) * self.k0 * n / (self.k0 + n)
 
-        assert not np.isnan(sn).any(), (self.s0, data_cov, n, data, index)
+        # TODO: this works well but it is not the original scheme in the paper
+        return multivariate_normal(data_mean, data_cov).pdf(x_star)
 
-        data_mean_star = (data_mean * n + x_star) / (n + 1)
-        sn_star = self.s0 + data_cov + self._cov_single(x_star) + self._cov_single(data_mean_star - self.m0) * self.k0 * n / (self.k0 + n)
-
-        numerator1 = np.power(np.pi * (kn + 1) / kn, -self.dim / 2.0)
-        temp = np.linalg.det(sn_star)
-        numerator2 = np.power(temp / np.linalg.det(sn), -vn / 2.0) * np.power(temp, -0.5)
-
-        assert not np.isnan(numerator2), (sn, sn_star, data_cov, self.z, k)
-        assert self.dim % 2 == 0
-        # numerator3 = gamma((vn + 1) / 2.0) / gamma((vn + 1 - self.dim) / 2.0)
-        numerator3 = np.prod((vn - np.arange(1, 1.1 + self.dim, 2)) / 2)
-
-        assert not np.isnan(numerator1 * numerator2 * numerator3), (numerator1, numerator2, numerator3)
-
-        return numerator1 * numerator2 * numerator3
-
-    # def fit(self, max_iter):
-    #     for _iter in range(max_iter):
-    #         for i in range(self.n):
-    #             t1 = self._term1(i)
-    #
-    #             t2 = np.zeros(self.k)
-    #             self.freq[self.z[i]] -= 1
-    #             last = self.z[i]
-    #             self.z[i] = -1                                  # take it out
-    #             for k in range(self.k):
-    #                 t2[k] = self._term2(k, self.data[i])        # TODO: not right
-    #
-    #             cum = np.cumsum(t1 * t2)
-    #             cum /= cum[-1]
-    #             k_new = np.where(np.random.random() < cum)[0][0]
-    #             self.z[i] = k_new
-    #             self.freq[k_new] += 1
-    #
-    #             assert self.n == self.freq.sum()
+        # TODO: the original scheme in the paper
+        # data_mean_star = (np.mean(data, 0) * n + x_star) / (n + 1)
+        # mn = (self.k0 * self.m0 + n * data_mean) / kn
+        # mn_star = (self.k0 * self.m0 + (n + 1) * data_mean_star) / kn
+        # sn = self.s0 + data_cov + self.k0 * self._cov_single(self.m0) + kn * self._cov_single(mn)
+        # sn_star = self.s0 + data_cov + self._cov_single(x_star) + \
+        #           self.k0 * self._cov_single(self.m0) + (kn + 1) * self._cov_single(mn_star)
+        # numerator1 = np.power(np.pi * (kn + 1) / kn, -self.dim / 2.0)
+        # temp = np.linalg.det(sn_star)
+        # numerator2 = np.power(temp / np.linalg.det(sn), -vn / 2.0) * np.power(temp, -0.5)
+        # numerator3 = np.exp(gammaln((vn + 1) / 2.0) - gammaln((vn + 1 - self.dim) / 2.0))
+        # ret = numerator1 * numerator2 * numerator3
+        # return ret
 
     def _form_dist(self):
+        """ From status sequence, rebuild k Gaussian distributions """
         mu = np.zeros((self.dim, self.k))
         sigma = np.zeros((self.dim, self.dim, self.k))
         pi = np.zeros(self.k)
@@ -117,48 +89,47 @@ class Gibbs:
             pi[i] = (len(c) / float(self.n))
             mu[:, i] = c.mean(0)
             sigma[:, :, i] = np.cov(c, rowvar=False)
-        return np.array(mu), np.array(sigma), np.array(pi)
+        return mu, sigma, pi
 
-    def test(self, mu_t, sigma_t, pi_t):
+    # def _form_dist(self):
+    #    """ Form k Gaussian distributions with sampling method """
+    #     mu = np.zeros((self.dim, self.k))
+    #     sigma = np.zeros((self.dim, self.dim, self.k))
+    #     _pi = np.bincount(self.z) / float(self.n)
+    #     pi = np.zeros(self.k)
+    #     pi[:len(_pi)] = _pi
+    #     for i in range(self.k):
+    #         mu[:, i], sigma[:, :, i] = self._update_component(i)
+    #     return mu, sigma, pi
+
+    def test(self):
+        """ Routine API: print likelihood """
         mu, sigma, pi = self._form_dist()
-        print(mu)
-        err_mu = np.linalg.norm(mu_t - mu)
-        err_sigma = np.linalg.norm(sigma_t - sigma)
-        err_pi = np.linalg.norm(pi_t - pi)
-        print(err_mu, err_sigma, err_pi)
         self.log_likelihood(mu, sigma, pi)
-        return err_mu, err_sigma, err_pi
 
-    def fit_and_test(self, max_iter, mu_t, sigma_t, pi_t):
+    def fit_and_test(self, max_iter):
+        """ Combine fit and test routine """
         for _iter in range(max_iter):
-            if _iter % 5 == 0:
-                print('\n%d' % _iter)
-                self.test(mu_t, sigma_t, pi_t)
-
-            count = 0
+            if _iter % 1 == 0:
+                self.test()
+                mu, sigma, pi = self._form_dist()
+                print(self.log_likelihood(mu, sigma, pi))
             for i in range(self.n):
                 t1 = self._term1(i)
-
                 t2 = np.zeros(self.k)
-                self.freq[self.z[i]] -= 1
                 last = self.z[i]
-                self.z[i] = -1                                  # take it out
+                self.freq[last] -= 1
+                self.z[i] = -1
                 for k in range(self.k):
-                    t2[k] = self._term2(k, self.data[i])        # TODO: not right
-
+                    t2[k] = self._term2(k, self.data[i])
                 cum = np.cumsum(t1 * t2)
                 cum /= cum[-1]
-
-                assert cum[-1] == 1.0, (t1, t2)
-
                 k_new = np.where(np.random.random() < cum)[0][0]
-                if k_new != last:
-                    count += 1
                 self.z[i] = k_new
                 self.freq[k_new] += 1
 
-                assert self.n == self.freq.sum()
-            print(count, end=',')
+    def predict(self):
+        return self._form_dist()
 
     def log_likelihood(self, mu, sigma, pi):
         mat = np.zeros((self.n, self.k))
@@ -168,21 +139,15 @@ class Gibbs:
                 mat[j, i] = dist.pdf(self.data[j])
         evaluation = np.sum(np.log(np.dot(mat, pi)))
         print(evaluation)
-
-
+        return evaluation
 
 
 def test():
-    g = GMM(2, 2)
-    # g = GMM(2, 2, mu=np.array([[1, 1], [-1, -1]]), sigma=np.dstack([(np.eye(2)), np.eye(2)]))
-    data = g.observe(500)
-    # data = np.array([[10, 10], [-10, -10]]).repeat(20, 0)
-    gb = Gibbs(2, 2, data)
-    print('Target log_likelihood: ')
-    gb.log_likelihood(g.mu, g.sigma, g.a)
-    gb.fit_and_test(1000, g.mu, g.sigma, g.a)
+    g = GMM(5, 2)
+    data = g.observe(1000)
+    gb = Gibbs(5, 2, data)
+    gb.fit_and_test(100)
+
 
 if __name__ == '__main__':
     test()
-
-

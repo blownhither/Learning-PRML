@@ -1,6 +1,7 @@
 import numpy as np
 
 from Probabilistic.GMM import GMM
+from scipy.stats import multivariate_normal
 """
 This file runs a EM algorithm on GMM model and provides several visualization functions.
 """
@@ -78,21 +79,20 @@ class EM(GMM):
         for i in range(n_iter):
             self.maximization(self.expectation())
 
-    def test(self, mu, sigma, a):
-        """ Calculate norm diff between stored dist param and given truth """
-        err_mu = np.linalg.norm(self.mu - mu)
-        err_sigma = np.linalg.norm(self.sigma - sigma)
-        err_a = np.linalg.norm(self.a - a)
-        print(err_mu, err_sigma, err_a)
+    def test(self):
+        print(self.mu, self.sigma, self.a)
 
-    def fit_and_test(self, n_iter, mu, sigma, a):
+    def fit_and_test(self, n_iter):
         """ Fit and print accuracy a few rounds """
+        ll = np.zeros(n_iter)
         for i in range(n_iter):
             if i % 5 == 0:
                 print("iter ", i)
-                self.test(mu, sigma, a)
-                print(self.log_likelihood())
+                # self.test()
             self.maximization(self.expectation())
+            ll[i] = self.log_likelihood()
+            print(ll[i])
+        return ll
 
     def log_likelihood(self):
         """ Log likelihood for evaluation """
@@ -133,8 +133,8 @@ def plot_dist(mu, sigma):
 
     from matplotlib import pyplot as plt, mlab
     delta = 0.025
-    x = np.arange(-1, 1, delta)
-    y = np.arange(-1, 1, delta)
+    x = np.arange(-5, 5, delta)
+    y = np.arange(-5, 5, delta)
     axis_x, axis_y = np.meshgrid(x, y)
     dist = mlab.bivariate_normal(axis_x, axis_y, mux=mu[0], muy=mu[1],
                                  sigmax=sigma[0, 0], sigmay=sigma[1, 1], sigmaxy=sigma[0, 1] ** 2)
@@ -146,14 +146,53 @@ def plot_dist(mu, sigma):
 def test_em():
     """ Unittest """
     g = GMM(5, 2)
-    data = g.observe(1000)
-    # draw_hidden(g, data)
-    # plt = draw_dist(g.mu[:, 0], g.sigma[:, :, 0])
-    # plt.show()
-    # g.observe_and_plot(1000)
+    data = g.observe(3000)
+    from matplotlib import pyplot as plt
+    plt.subplot(1, 2, 1)
+    plt = g.plot()
+    plt.xlim((-5, 5))
+    plt.ylim((-5, 5))
     e = EM(5, 2, data)
-    e.fit_and_test(1000, g.mu, g.sigma, g.a)
+    ll = e.fit_and_test(50)
+    ll.tofile('Probabilistic/tmp/em/d2k5_log.txt', sep=' ')
+
+    plt.subplot(1, 2, 2)
+    for i in range(5):
+        sigma = e.sigma[:, :, i]
+        sigma[0, 0], sigma[1, 1] = sigma[1, 1], sigma[0, 0]
+        plot_dist(e.mu[:, i], sigma)
+    plt.xlim((-5, 5))
+    plt.ylim((-5, 5))
+    plt.savefig('Probabilistic/tmp/em/d2k5_dist_fail.png')
+    plt.show()
+
+
+def test_datasize():
+    log_likelihood = np.fromfile('Probabilistic/tmp/em/n_log.txt', sep=' ')
+    print(log_likelihood)
+    for i in range(15):
+        log_likelihood[i] /= (i + 1) * 100
+    from matplotlib import pyplot as plt
+    plt.plot(np.arange(1, 16, 1), log_likelihood)
+    plt.ylabel('Average LL evaluation')
+    plt.xlabel('Observation size (x100)')
+    plt.savefig('Probabilistic/tmp/em/n_log.png')
+
+
+def test_k():
+    log_likelihood = np.fromfile('Probabilistic/tmp/em/k_log.txt', sep=' ')
+    from matplotlib import pyplot as plt
+    plt.plot(np.arange(1, 9, 1), log_likelihood)
+    plt.xlabel('number of Gaussian components')
+    plt.ylabel('LL evaluation')
+    plt.savefig('Probabilistic/tmp/em/k_log.png')
 
 
 if __name__ == '__main__':
-    test_em()
+    # test_em()
+    a = np.fromfile('/Users/bh/projects/prml/Probabilistic/tmp/em/d2k5_log.txt', sep=' ')
+    from matplotlib import pyplot as plt
+    plt.plot(np.arange(len(a)), a)
+    plt.xlabel('Iteration time')
+    plt.ylabel('LL evaluation')
+    plt.savefig('/Users/bh/projects/prml/Probabilistic/tmp/em/d2k5_log.png')
