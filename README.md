@@ -1,5 +1,23 @@
 # Learning PRML
 This is a repo for test implementation while learning PRML.
-Use at your own risk.
+Take anything you want. Use at your own risk.
 
+Current implementations includes:
 
+- Linear
+    + Linear Regression
+    + Logistic Regression
+- Neural Network
+    + Back Propagation Network
+    + Back Propagation Perceptron
+    + Simple CNN (on TensorFlow)
+- Probabilistic
+    + Gaussian Mixture Model
+    + EM (expectation maximization) algorithm on GMM
+    + Gibbs sampling methods on GMM
+- kNN Classifier
+- Naive Bayes Classifer
+
+- Notes on lots of subjects
+
+Comments and discussion are welcomed!
