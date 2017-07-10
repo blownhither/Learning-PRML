@@ -60,9 +60,21 @@ int KDTree<ndim>::median(int dim, int start, int end) {
 //    } comp;
     
     double* row = this->data[dim];
-    auto comp = [row](int a, int b) { return row[a] < row[b]; };
+    auto comp = [row](int a, int b) {
+        return row[a] < row[b];
+    };
+    
+    std::cout << "sort:";
+    for(int i=start; i<end; ++i)
+        std::cout << row[index[i]];
     
     std::sort(this->index + start, this->index + end, comp);
+    
+    std::cout << " then:";
+    for(int i=start; i<end; ++i)
+        std::cout << row[index[i]];
+    std::cout << std::endl;
+    
     return (start + end) / 2;
 }
 
@@ -73,7 +85,7 @@ void KDTree<ndim>::print() {
         std::vector<Node *> temp;
         std::cout << vec[0]->dim << ": ";
         for(Node *n : vec) {
-            std::cout << this->printPoint(n->index);
+            std::cout << this->printPoint(this->index[n->index]);
             if (n->l != NULL)
                 temp.push_back(n->l);
             if (n->r != NULL)
