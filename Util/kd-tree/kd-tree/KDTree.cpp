@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
+#include <sstream>
 
 #include "KDTree.hpp"
 
@@ -50,13 +51,17 @@ template<int ndim>
 int KDTree<ndim>::median(int dim, int start, int end) {
     //TODO: consider using O(n)
     
-    static double* row = this->data[dim];
-    struct {
-        bool operator()(int a, int b) const
-        {
-            return row[a] < row[b];
-        }
-    } comp;
+//    static double* row = this->data[dim];
+//    struct {
+//        bool operator()(int a, int b) const
+//        {
+//            return row[a] < row[b];
+//        }
+//    } comp;
+    
+    double* row = this->data[dim];
+    auto comp = [row](int a, int b) { return row[a] < row[b]; };
+    
     std::sort(this->index + start, this->index + end, comp);
     return (start + end) / 2;
 }
@@ -68,7 +73,7 @@ void KDTree<ndim>::print() {
         std::vector<Node *> temp;
         std::cout << vec[0]->dim << ": ";
         for(Node *n : vec) {
-            std::cout << n->division << ' ';
+            std::cout << this->printPoint(n->index);
             if (n->l != NULL)
                 temp.push_back(n->l);
             if (n->r != NULL)
@@ -77,4 +82,15 @@ void KDTree<ndim>::print() {
         std::cout << std::endl;
         vec = temp;
     }
+}
+
+template<int ndim>
+std::string KDTree<ndim>::printPoint(int i) {
+    std::ostringstream ss;
+    ss << "(" << this->data[0][i];
+    for(int dim=1; dim<ndim; ++dim) {
+        ss << ',' << this->data[dim][i];
+    }
+    ss << ") ";
+    return ss.str();
 }

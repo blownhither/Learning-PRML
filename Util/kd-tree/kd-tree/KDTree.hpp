@@ -10,7 +10,7 @@
 #define KDTree_hpp
 
 #include <cstdlib>
-
+#include <string>
 
 struct Node {
     int dim, index;
@@ -36,13 +36,16 @@ private:
     void buildTree();
     Node* recBuildTree(int dim, int start, int end);
     int median(int dim, int start, int end);    // modify index
+    std::string printPoint(int i);
 };
 
 void testKDTree() {
-    double p[] = {8, 7, 6, 5, 4, 3, 2, 1};
-    double **data = new double*[2];
-    data[0] = data[1] = p;
-    KDTree<2> kdt(data, 8);
+    double a1[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    double a2[] = {6, 4, 3, 4, 7, 3, 1, 8, 5};
+    double **data = new double* [2];
+    data[0] = a1;
+    data[1] = a2;
+    KDTree<2> kdt(data, 9);
     kdt.print();
 }
 
