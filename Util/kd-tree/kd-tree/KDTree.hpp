@@ -32,6 +32,7 @@ private:
     int ndata;
     int *index;
     Node *head;
+    Node **inv_ref;
     
     void buildTree();
     Node* recBuildTree(int dim, int start, int end);
