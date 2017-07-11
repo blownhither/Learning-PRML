@@ -11,6 +11,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <vector>
 
 struct Node {
     int dim, index;
@@ -26,6 +27,7 @@ class KDTree {
 public:
     KDTree(double **data, int ndata);   // Read data of [ndim, n_data] (row-wise)
     void print();
+    std::vector<std::vector<double> > knn(const double *data, int k) const;
     
 private:
     double **data;
