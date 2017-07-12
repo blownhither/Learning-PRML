@@ -22,20 +22,27 @@ KDTree<ndim>::KDTree(double **data, int ndata) {
     this->data = data;
     this->ndata = ndata;
     this->index = new int[ndata];
-    for(int i=0; i<ndata; ++i)
+    for(int i=0; i<ndata; ++i) {
         this->index[i] = i;
+    }
     this->buildTree();
 }
 
 template<int ndim>
 KDTree<ndim>::~KDTree() {
-    for(int i=0; i<this->ndata; ++i)
+    for(int i=0; i<this->ndata; ++i) {
         delete this->inv_ref[i];
-    delete this->inv_ref;
+    }
+    delete[] this->inv_ref;
     this->inv_ref = NULL;
     this->head = NULL;
-    delete this->index;
+    delete[] this->index;
     this->index = NULL;
+}
+
+template <int ndim>
+KDTree<ndim>::KDTree(const KDTree<ndim>& t) {
+    throw "Not implemented!";
 }
 
 //template <int ndim>
@@ -71,10 +78,12 @@ typename KDTree<ndim>::Node* KDTree<ndim>::recBuildTree(int dim, int start, int 
     Node* l = recBuildTree(next_dim, start, mid);
     Node* r = recBuildTree(next_dim, mid + 1, end);
     Node* node  = new Node{dim, mid, this->data[dim][mid], l, r, NULL};
-    if(l != NULL)
+    if(l != NULL) {
         l->parent = node;
-    if(r != NULL)
+    }
+    if(r != NULL) {
         r->parent = node;
+    }
     this->inv_ref[mid] = node;
     return node;
 }
@@ -100,10 +109,12 @@ void KDTree<ndim>::print() {
         std::cout << vec[0]->dim << ": ";
         for(Node *n : vec) {
             std::cout << this->printPoint(this->index[n->index]) << " ";
-            if (n->l != NULL)
+            if (n->l != NULL) {
                 temp.push_back(n->l);
-            if (n->r != NULL)
+            }
+            if (n->r != NULL) {
                 temp.push_back(n->r);
+            }
         }
         std::cout << std::endl;
         vec = temp;
@@ -144,5 +155,17 @@ typename KDTree<ndim>::Node* KDTree<ndim>::find(std::array<double, ndim> &target
             // fire two recursive procedures
         }
     }
+}
+
+
+
+void testKDTree() {
+    double a1[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    double a2[] = {6, 4, 3, 4, 7, 3, 1, 8, 5};
+    double **data = new double* [2];
+    data[0] = a1;
+    data[1] = a2;
+    KDTree<2> kdt(data, 9);
+    kdt.print();
 }
 
