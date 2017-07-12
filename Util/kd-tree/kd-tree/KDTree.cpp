@@ -26,13 +26,34 @@ KDTree<ndim>::KDTree(double **data, int ndata) {
 }
 
 template<int ndim>
+KDTree<ndim>::~KDTree() {
+    for(int i=0; i<this->ndata; ++i)
+        delete this->inv_ref[i];
+    delete this->inv_ref;
+    this->inv_ref = NULL;
+    this->head = NULL;
+    delete this->index;
+    this->index = NULL;
+}
+
+//template <int ndim>
+//void KDTree<ndim>::recDeleteNode(KDTree::Node *n){
+//    if(n == NULL)
+//        return;
+//    recDeleteNode(n->l);
+//    recDeleteNode(n->r);
+//    n->l = n->r = NULL;
+//    delete n;
+//}
+
+template<int ndim>
 void KDTree<ndim>::buildTree() {
     this->inv_ref = new Node*[this->ndata];
     this->head = this->recBuildTree(0, 0, this->ndata);
 }
 
 template<int ndim>
-Node* KDTree<ndim>::recBuildTree(int dim, int start, int end) {
+typename KDTree<ndim>::Node* KDTree<ndim>::recBuildTree(int dim, int start, int end) {
     if(end - start <= 0) {
         return NULL;
     }
@@ -89,4 +110,28 @@ std::string KDTree<ndim>::printPoint(int i) {
     }
     ss << ")";
     return ss.str();
+}
+
+template<int ndim>
+typename KDTree<ndim>::Node* KDTree<ndim>::find(std::array<double, ndim> &target) {
+    auto u_bound = std::array<double, ndim>();    // upper bound at each dimension
+    auto l_bound = std::array<double, ndim>();
+    for(int i=0; i<ndim; ++i) {
+        u_bound[i] = INF;
+        l_bound[i] = NEG_INF;
+    }
+    
+    Node* p = this->head;
+    while(true) {
+        int dim = p->dim;
+        if(target[dim] < p->division) {         // go to smaller side
+            u_bound[dim] = p->division;
+            p = p->l;
+        } else if(target[dim] > p->division) {  // go to greater side
+            l_bound[dim] = p->division;
+            p = p->r;
+        } else {                                // find equal
+            // fire two recursive procedures
+        }
+    }
 }
