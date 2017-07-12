@@ -13,6 +13,7 @@
 #include <string>
 #include <array>
 #include <limits>
+#include <vector>
 
 
 template<int ndim>
@@ -20,6 +21,7 @@ class KDTree {
 public:
     KDTree(double **data, int ndata);   // Read data of [ndim, n_data] (row-wise)
     ~KDTree();
+    KDTree(const KDTree& t);            // copy constructor
     void print();
     std::vector<std::vector<double> > knn(const double *data, int k) const;
     
@@ -45,19 +47,9 @@ private:
 //    void recDeleteNode(Node *n);
     int median(int dim, int start, int end);    // modify index
     std::string printPoint(int i);
-    Node* find(std::array<double, ndim> &target);
-    
+    Node* nearestNeighbour(std::array<double, ndim> &target);
+    double normDistance(int col, const std::array<double, ndim> &target) const;
 };
-
-void testKDTree() {
-    double a1[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    double a2[] = {6, 4, 3, 4, 7, 3, 1, 8, 5};
-    double **data = new double* [2];
-    data[0] = a1;
-    data[1] = a2;
-    KDTree<2> kdt(data, 9);
-    kdt.print();
-}
 
 
 #endif /* KDTree_hpp */
