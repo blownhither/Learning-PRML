@@ -11,23 +11,27 @@
 
 #include <cstdlib>
 #include <string>
-#include <vector>
-
-struct Node {
-    int dim, index;
-    double division;        // division coordinate at dim
-    Node *l, *r;            // Child nodes
-    Node *parent;           // Parent node
-};
-
+#include <array>
+#include <limits>
 
 
 template<int ndim>
 class KDTree {
 public:
     KDTree(double **data, int ndata);   // Read data of [ndim, n_data] (row-wise)
+    ~KDTree();
     void print();
     std::vector<std::vector<double> > knn(const double *data, int k) const;
+    
+    struct Node {
+        int dim, index;
+        double division;        // division coordinate at dim
+        Node *l, *r;            // Child nodes
+        Node *parent;           // Parent node
+    };
+    
+    const double INF = std::numeric_limits<double>::infinity();             // Infinity of double
+    const double NEG_INF = -std::numeric_limits<double>::infinity();        // Negative infinity of double
     
 private:
     double **data;
@@ -38,8 +42,11 @@ private:
     
     void buildTree();
     Node* recBuildTree(int dim, int start, int end);
+//    void recDeleteNode(Node *n);
     int median(int dim, int start, int end);    // modify index
     std::string printPoint(int i);
+    Node* find(std::array<double, ndim> &target);
+    
 };
 
 void testKDTree() {
