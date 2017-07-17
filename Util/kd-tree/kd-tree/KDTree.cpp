@@ -135,14 +135,21 @@ std::string KDTree<ndim>::printPoint(int i) {
 
 template<int ndim>
 typename KDTree<ndim>::Node* KDTree<ndim>::find(std::array<double, ndim> &target) {
+    // Find nearest node of a point
     auto u_bound = std::array<double, ndim>();    // upper bound at each dimension
     auto l_bound = std::array<double, ndim>();
     for(int i=0; i<ndim; ++i) {
         u_bound[i] = INF;
         l_bound[i] = NEG_INF;
     }
-    
     Node* p = this->head;
+    return this->recFind(target, p, u_bound, l_bound);
+}
+
+template<int ndim>
+typename KDTree<ndim>::Node* recFind(std::array<double, ndim> &target, typename KDTree<ndim>::Node *p, std::array<double, ndim> &u_bound, std::array<double, ndim> &l_bound) {
+    // Recursive procedure for fork find
+    
     while(true) {
         int dim = p->dim;
         if(target[dim] < p->division) {         // go to smaller side
@@ -156,8 +163,6 @@ typename KDTree<ndim>::Node* KDTree<ndim>::find(std::array<double, ndim> &target
         }
     }
 }
-
-
 
 void testKDTree() {
     double a1[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};

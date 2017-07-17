@@ -47,7 +47,7 @@ private:
     int median(int dim, int start, int end);    // modify index
     std::string printPoint(int i);
     Node* find(std::array<double, ndim> &target);
-    
+    Node* recFind(std::array<double, ndim> &target, Node *p, std::array<double, ndim> &u_bound, std::array<double, ndim> &l_bound);
 };
 
 
