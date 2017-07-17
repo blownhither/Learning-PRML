@@ -47,8 +47,9 @@ private:
 //    void recDeleteNode(Node *n);
     int median(int dim, int start, int end);    // modify index
     std::string printPoint(int i);
-    Node* nearestNeighbour(std::array<double, ndim> &target);
+    Node* nearestNeighbour(std::array<double, ndim> &target, Node *start);
     double normDistance(int col, const std::array<double, ndim> &target) const;
+    bool intersect(std::array<double, ndim>& center, double dist, std::array<double, ndim>& u_bound, std::array<double, ndim>& l_bound, int dim);
 };
 
 

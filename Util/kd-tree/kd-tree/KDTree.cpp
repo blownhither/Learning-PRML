@@ -140,7 +140,7 @@ std::string KDTree<ndim>::printPoint(int i) {
 }
 
 template<int ndim>
-typename KDTree<ndim>::Node* KDTree<ndim>::nearestNeighbour(std::array<double, ndim> &target) {
+typename KDTree<ndim>::Node* KDTree<ndim>::nearestNeighbour(std::array<double, ndim> &target, Node *start) {
     auto u_bound = std::array<double, ndim>();    // upper bound at each dimension
     auto l_bound = std::array<double, ndim>();
     for(int i=0; i<ndim; ++i) {
@@ -148,8 +148,8 @@ typename KDTree<ndim>::Node* KDTree<ndim>::nearestNeighbour(std::array<double, n
         l_bound[i] = NEG_INF;
     }
     
-    // Follow one path to nearest leaf
-    Node* p = this->head, last;
+    // Follow one path to 'optimal' leaf
+    Node* p = start, last;
     while(p != NULL) {
         int dim = p->dim;
         if(target[dim] <= p->division) {         // go to smaller/euqal side
@@ -164,22 +164,40 @@ typename KDTree<ndim>::Node* KDTree<ndim>::nearestNeighbour(std::array<double, n
     }
     
     double dist = INF, temp;
-    Node *best = last, sibling;
+    Node *best = last, sibling, parent;
     // Back up from nearst leaf ('last')
+    p = last;               // current focus
     while(true) {
-        p = best->parent;
-        sibling = (p->l == best) ? p->r : p->l;
+        parent = p->parent;
+        sibling = (parent->l == p) ? parent->r : parent->l;
+        // if p is a better solution, substitue 'best'
         temp = this->norm_distance(p->index, target);
         if(temp < dist) {
             best = p;
         }
+        // if sibling resides in sphere, consider sibling
+        if(false  /*TODO:  */) {
+            auto ret = this->nearestNeighbour(target, sibling);
+            // TODO:
+            
+        }
+        //TODO:
         
     }
 }
 
 template <int ndim>
+bool KDTree<ndim>::intersect(std::array<double, ndim>& center, double dist, std::array<double, ndim>& u_bound, std::array<double, ndim>& l_bound, int dim) {
+    // This implementation applies to determing whether a sphere centered OUTSIDE a rect (while reside beside a dim) intersects with the rect defined by u_/l_bound.
+    
+    double min_dist = std::min(std::abs(center[dim] - l_bound[dim]), std::abs(center[dim] - u_bound[dim]));
+    return min_dist <= dist;
+}
+
+template <int ndim>
 double KDTree<ndim>::normDistance(int col, const std::array<double, ndim> &target)const {
     // return distance between data[:, col] and target, without sqrt or root
+    // TODO: this is a weird pair of arguments...
     double dist = 0;
     for(int i=0; i<ndim; ++i) {
         double temp = this->data[i][col] - target[i];
