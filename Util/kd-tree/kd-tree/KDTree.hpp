@@ -13,6 +13,7 @@
 #include <string>
 #include <array>
 #include <limits>
+#include <vector>
 
 
 template<int ndim>
@@ -48,6 +49,9 @@ private:
     std::string printPoint(int i);
     Node* find(std::array<double, ndim> &target);
     Node* recFind(std::array<double, ndim> &target, Node *p, std::array<double, ndim> &u_bound, std::array<double, ndim> &l_bound);
+    Node* nearestNeighbour(std::array<double, ndim> &target, Node *start);
+    double normDistance(int col, const std::array<double, ndim> &target) const;
+    bool intersect(std::array<double, ndim>& center, double dist, std::array<double, ndim>& u_bound, std::array<double, ndim>& l_bound, int dim) const;
 };
 
 

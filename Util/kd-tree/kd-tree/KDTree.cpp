@@ -91,13 +91,19 @@ typename KDTree<ndim>::Node* KDTree<ndim>::recBuildTree(int dim, int start, int 
 template<int ndim>
 int KDTree<ndim>::median(int dim, int start, int end) {
     // Rearrange this->index, so that data[:, index[start : end)] is in order, the median index is returned
+    // Moreover, a less-equal : greater split is guaranteed
+    
     //TODO: consider using O(n)
     double* row = this->data[dim];
     auto comp = [row](int a, int b) {
         return row[a] < row[b];
     };
     std::sort(this->index + start, this->index + end, comp);
-    return (start + end) / 2;
+    int ret = (start + end) / 2;
+    while(ret < end - 1 && row[ret] == row[ret + 1]) {
+        ret += 1;
+    }
+    return ret;
 }
 
 template<int ndim>
@@ -133,35 +139,72 @@ std::string KDTree<ndim>::printPoint(int i) {
     return ss.str();
 }
 
+
 template<int ndim>
-typename KDTree<ndim>::Node* KDTree<ndim>::find(std::array<double, ndim> &target) {
-    // Find nearest node of a point
+typename KDTree<ndim>::Node* KDTree<ndim>::nearestNeighbour(std::array<double, ndim> &target, Node *start) {
     auto u_bound = std::array<double, ndim>();    // upper bound at each dimension
     auto l_bound = std::array<double, ndim>();
     for(int i=0; i<ndim; ++i) {
         u_bound[i] = INF;
         l_bound[i] = NEG_INF;
     }
-    Node* p = this->head;
-    return this->recFind(target, p, u_bound, l_bound);
-}
-
-template<int ndim>
-typename KDTree<ndim>::Node* recFind(std::array<double, ndim> &target, typename KDTree<ndim>::Node *p, std::array<double, ndim> &u_bound, std::array<double, ndim> &l_bound) {
-    // Recursive procedure for fork find
     
-    while(true) {
+    // Follow one path to 'optimal' leaf
+    Node* p = start, last;
+    while(p != NULL) {
         int dim = p->dim;
-        if(target[dim] < p->division) {         // go to smaller side
+        if(target[dim] <= p->division) {         // go to smaller/euqal side
             u_bound[dim] = p->division;
+            last = p;
             p = p->l;
         } else if(target[dim] > p->division) {  // go to greater side
             l_bound[dim] = p->division;
+            last = p;
             p = p->r;
-        } else {                                // find equal
-            // fire two recursive procedures
         }
     }
+    
+    double dist = INF, temp;
+    Node *best = last, sibling, parent;
+    // Back up from nearst leaf ('last')
+    p = last;               // current focus
+    while(true) {
+        parent = p->parent;
+        sibling = (parent->l == p) ? parent->r : parent->l;
+        // if p is a better solution, substitue 'best'
+        temp = this->norm_distance(p->index, target);
+        if(temp < dist) {
+            best = p;
+        }
+        // if sibling resides in sphere, consider sibling
+        if(false  /*TODO:  */) {
+            auto ret = this->nearestNeighbour(target, sibling);
+            // TODO:
+            
+        }
+        //TODO:
+        
+    }
+}
+
+template <int ndim>
+bool KDTree<ndim>::intersect(std::array<double, ndim>& center, double dist, std::array<double, ndim>& u_bound, std::array<double, ndim>& l_bound, int dim) const {
+    // This implementation applies to determing whether a sphere centered OUTSIDE a rect (while reside beside a dim) intersects with the rect defined by u_/l_bound.
+    
+    double min_dist = std::min(std::abs(center[dim] - l_bound[dim]), std::abs(center[dim] - u_bound[dim]));
+    return min_dist >= dist;
+}
+
+template <int ndim>
+double KDTree<ndim>::normDistance(int col, const std::array<double, ndim> &target)const {
+    // return distance between data[:, col] and target, without sqrt or root
+    // TODO: this is a weird pair of arguments...
+    double dist = 0;
+    for(int i=0; i<ndim; ++i) {
+        double temp = this->data[i][col] - target[i];
+        dist += temp * temp;
+    }
+    return dist;
 }
 
 void testKDTree() {
