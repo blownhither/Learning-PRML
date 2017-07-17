@@ -198,3 +198,15 @@ void testKDTree() {
     kdt.print();
 }
 
+
+
+void testKDTree() {
+    double a1[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    double a2[] = {6, 4, 3, 4, 7, 3, 1, 8, 5};
+    double **data = new double* [2];
+    data[0] = a1;
+    data[1] = a2;
+    KDTree<2> kdt(data, 9);
+    kdt.print();
+}
+
