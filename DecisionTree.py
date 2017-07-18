@@ -6,6 +6,7 @@
 @license: Apache Licence 
 @time: 7/17/17 9:50 PM
 """
+from collections import Counter
 import numpy as np
 
 
@@ -48,7 +49,7 @@ class DecisionTree:
         :param dim_mask: mask of dim
         :return:
         """
-        #case1
+        # case 1
         case1 = True
         labels = self.y[data_idx]
         temp = labels[0]
@@ -70,6 +71,9 @@ class DecisionTree:
             return node
 
         # case 3
+        div_dim = self._best_division(data_idx, dim_idx)
+
+
 
 
     def _most_frequent(self, labels):
@@ -83,7 +87,16 @@ class DecisionTree:
                     return False
         return True
 
+    def _best_division(self, data_idx, dim_idx):
+        """
+        Use Gini index to choose one best dimension to split on
+        :return: dimension index
+        """
+        arg = np.argmax([self._gini_index(data_idx, d) for d in dim_idx])[-1]
+        return dim_idx[arg]
 
+    def _gini_index(self, data_idx, dim):
+        counter = Counter(self.x[data_idx, dim])
 
 
 class DecisionTreeNode:
