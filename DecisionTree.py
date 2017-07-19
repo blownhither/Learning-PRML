@@ -24,7 +24,7 @@ class DecisionTree:
         """
         Fit a decision tree with given x and y
         :param x: row-wise discrete data
-        :param y: class label
+        :param y: class label, ranging from 0...n
         """
         x = np.array(x)
         y = np.array(y)
@@ -71,7 +71,7 @@ class DecisionTree:
             return node
 
         # case 3
-        div_dim = self._best_division(data_idx, dim_idx)
+        div_dim = self._best_division(data_idx, dim_idx, labels)
 
 
 
@@ -87,16 +87,36 @@ class DecisionTree:
                     return False
         return True
 
-    def _best_division(self, data_idx, dim_idx):
+    def _best_division(self, data_idx, dim_idx, labels):
         """
         Use Gini index to choose one best dimension to split on
         :return: dimension index
         """
-        arg = np.argmax([self._gini_index(data_idx, d) for d in dim_idx])[-1]
+        arg = np.argmax([self._gini_index(data_idx, d, labels) for d in dim_idx])[-1]
         return dim_idx[arg]
 
-    def _gini_index(self, data_idx, dim):
-        counter = Counter(self.x[data_idx, dim])
+    def _gini_index(self, data_idx, dim, labels):
+        n = len(data_idx)
+        data = self.x[data_idx, dim]
+        counter = Counter(data)
+        ans = 0.0
+        for key, value in counter.iteritems():
+            ans += self._gini(labels[data == key]) * value
+        return ans / n
+
+    @staticmethod
+    def _gini(x):
+        return 1 - np.linalg.norm(np.array(Counter(x).values(), dtype=np.float)) / float(len(x) ** 2)
+
+    def print_tree(self):
+        stack = [self.head]
+        while stack:
+            temp = []
+            for node in stack:
+                print(node)
+                if node.children:
+                    temp.extend(node.children)
+            stack = temp
 
 
 class DecisionTreeNode:
@@ -106,6 +126,17 @@ class DecisionTreeNode:
         self.label = None       # label can be decided if node is leaf
         self.children = None    # a dict mapping attribute value to children
 
+    def __str__(self):
+        if self.leaf is True:
+            return 'Label:%d ' % self.label
+        else:
+            return 'Dim: %d' % self.dim
+
+
+def test_dt():
+    dt = DecisionTree()
+    dt.fit([[1,3],[-1,2],[1,2.3]], [1,1,1])
+    dt.print_tree()
 
 if __name__ == '__main__':
-    pass
+    test_dt()
