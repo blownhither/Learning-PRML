@@ -1,5 +1,4 @@
 import numpy as np
-from collections import Counter
 
 
 def accuracy(x, y):
