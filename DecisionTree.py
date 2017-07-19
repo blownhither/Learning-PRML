@@ -3,7 +3,7 @@
 
 """
 @author: blownhither@github
-@license: Apache Licence 
+@license: Apache Licence
 @time: 7/17/17 9:50 PM
 """
 from collections import Counter
@@ -75,8 +75,8 @@ class DecisionTree:
 
 
 
-
-    def _most_frequent(self, labels):
+    @staticmethod
+    def _most_frequent(labels):
         return np.argmax(np.bincount(labels))
 
     def _same_attribute_value(self, data_idx, dim_idx):
