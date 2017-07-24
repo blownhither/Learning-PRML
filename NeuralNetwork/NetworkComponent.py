@@ -11,9 +11,9 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         """
         :param n_priors: int, number of input this layer receives
         :param n_neurons: int, number of neurons in this layer
-        :param weight_init: NOT IMPLEMENTED !
         :param activation_func: lambda or function, Sigmoid by default 1/(1+exp(-x))
         :param learn_rate: float, learning rate
+        :param next_layer: specify next layer
         """
         self._neurons = [
             Neuron(n_priors=n_priors, activation_func=activation_func, learn_rate=learn_rate)
@@ -111,14 +111,14 @@ class NetworkLayer(metaclass=abc.ABCMeta):
         return self._n_neurons
 
 
-class OutputNetworkLayer(NetworkLayer):
+class OutputNetworkLayer(object, NetworkLayer):
     def __init__(self, n_priors, n_neurons, activation_func=None, learn_rate=None):
         super(OutputNetworkLayer, self).__init__(
             n_priors=n_priors, n_neurons=n_neurons, activation_func=activation_func, learn_rate=learn_rate
         )
 
     def gradient(self, y_, y=None):
-        assert y_ is not None and y is not None
+        assert y_ is not None and y is not None, "Output layer gradient takes truth y_ and output y"
         self._saved_gradient = y_ * (1 - y_) * (y - y_)
         return self._saved_gradient
 
@@ -128,16 +128,15 @@ class OutputNetworkLayer(NetworkLayer):
             n.train(x=x, gradient=g)
 
 
-class HiddenNetworkLayer(NetworkLayer):
+class HiddenNetworkLayer(object, NetworkLayer):
     def __init__(self, n_priors, n_neurons, activation_func=None, learn_rate=None):
         super(HiddenNetworkLayer, self).__init__(
             n_priors=n_priors, n_neurons=n_neurons, activation_func=activation_func, learn_rate=learn_rate
         )
 
     def gradient(self, y_, y=None):
-        assert y is None
+        assert y is None, "Hidden layer gradient takes only layer output y"
         l = self.get_next_layer()
-        assert isinstance(l, NetworkLayer)
         g = [np.sum(l.get_weight(i) * l.get_saved_gradient()) for i in range(self._n_neurons)]
         g *= y_ * (1 - y_)
         self._saved_gradient = g
@@ -147,6 +146,7 @@ class HiddenNetworkLayer(NetworkLayer):
         gradient = self.gradient(y_=y_)
         for n, g in zip(self._neurons, gradient):
             n.train(x=x, gradient=g)
+
 
 class Neuron:
     """

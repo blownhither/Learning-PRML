@@ -96,7 +96,9 @@ class DecisionTree:
         return dim_idx[arg]
 
     def _gini_index(self, data_idx, dim):
-        counter = Counter(self.x[data_idx, dim])
+        data = self.x[data_idx, dim]
+        counter = Counter(data)
+
 
 
 class DecisionTreeNode:
