@@ -1,6 +1,6 @@
 import numpy as np
-from math import gamma
-from scipy.special import gammaln
+# from math import gamma
+# from scipy.special import gammaln
 from scipy.stats import multivariate_normal
 
 from Probabilistic.GMM import GMM

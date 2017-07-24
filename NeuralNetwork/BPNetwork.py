@@ -1,4 +1,4 @@
-from NetworkComponent import OutputNetworkLayer, HiddenNetworkLayer, NetworkLayer
+from NetworkComponent import OutputNetworkLayer, HiddenNetworkLayer
 import numpy as np
 import pandas as pds
 
