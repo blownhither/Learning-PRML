@@ -32,7 +32,8 @@ class LinearRegressor:
         self.x = np.array(x)
         self.y = np.array(y)
 
-        assert self.x.ndim == 2
+        if not self.x.ndim == 2:
+            raise AssertionError("x should be matrix")
         self.n_samples, self.n_features = self.x.shape
 
         for i in range(self.n_features):
@@ -56,10 +57,14 @@ class LinearRegressor:
         x = np.array(x)
         assert x.ndim in {1, 2}
         if x.ndim == 1:
-            assert x.shape == (self.n_features,)
+            if not x.shape == (self.n_features,):
+                raise AssertionError("Shape of single-line x should be in shape %d but %s given" % \
+                                     (self.n_features, str(x.shape)))
             n = 1
         else:
-            assert x.shape[1] == self.n_features
+            if not x.shape[1] == self.n_features:
+                raise AssertionError("Shape of matrix x should have %d cols but %d given" % \
+                                     (self.n_features, x.shape[1]))
             n = x.shape[0]
 
         x = np.concatenate((x, np.ones((n, 1))), 1)
