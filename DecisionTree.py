@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 # encoding: utf-8
 
 """
@@ -144,9 +144,12 @@ class DecisionTreeNode:
 
     def __str__(self):
         if self.leaf is True:
-            return 'Label:%d ' % self.label
+            return 'Label: %d ' % self.label
         else:
-            return 'Dim: %d ' % self.dim
+            s = 'Dim: %d\n' % self.dim
+            for v in self.attribute_value:
+                s += str(v) + ' '
+            return s
 
 
 def test_dt():
@@ -156,7 +159,11 @@ def test_dt():
     x = np.array(df[df.columns[1:-3]])
     y = np.array(df[df.columns[-1]])
     dt.fit(x, y)
-    dt.print_tree()
+    # dt.print_tree()
+
+    # to use plot_tree you need to install graphviz and pygraphviz
+    from Util.plot_tree import plot_tree
+    plot_tree(dt.head, 'tmp/tree.png')
 
 
 if __name__ == '__main__':
