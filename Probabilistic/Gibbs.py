@@ -55,8 +55,8 @@ class Gibbs:
             return 0
         data = self.data[index]
         n = data.shape[0]
-        kn = self.k0 + n
-        vn = self.v0 + n
+        # kn = self.k0 + n
+        # vn = self.v0 + n
 
         # data_cov = self._cov(data)
         data_cov = np.cov(data.T)

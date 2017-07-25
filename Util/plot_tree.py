@@ -8,9 +8,7 @@
 """
 import pygraphviz as pgv
 
-"""
-Require: graphviz, pygraphviz
-"""
+# Require: graphviz, pygraphviz
 
 
 def plot_tree(tree, filename):
