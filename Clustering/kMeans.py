@@ -24,10 +24,12 @@ class KMeans:
         self.dim = data.shape[1]
         self._scale = np.mean(data, 0), np.std(data, 0)
         self.data = (data - self._scale[0]) / self._scale[1]    # data normalized
-        self.centers = None
-        self.labels = None
-        self.k = None
-        self.colors = None
+
+        self.centers = None                                     # center of each cluster
+        self.labels = None                                      # cluster id for each sample
+        self.k = None                                           # number of clusters
+        self.colors = None                                      # preset color map helping plotting
+        self._pca = None                                        # PCA object helping plotting
 
     def fit(self, k, max_iter=1000, plot=False):
         """
@@ -39,17 +41,23 @@ class KMeans:
         self.k = k
         self.centers = np.random.random((k, self.dim))
         last_dbi = -1
-        if plot:
-            from matplotlib import pyplot as plt, cm
-            plt.ion()
+        if plot:                                        # if plot, setup colors and PCA
+            from matplotlib import pyplot as plt, cm    # import here in case not needed
+            from sklearn.decomposition import PCA
+            plt.ion()                                   # non-blocking mode when figure is plotted
             self.colors = cm.rainbow(np.linspace(0, 0.70, self.k))
+            self._pca = PCA(2)                          # help reduce dim to 2 so as to be plotted
+            self._pca.fit(self.data)
+
         for iter_ in range(max_iter):
-            self.labels = self._iter()
+            self.labels = self._iter()                  # newly assigned labels
             for i in range(k):
-                self.centers[i] = np.mean(self.data[self.labels == i], 0)
+                cluster = self.data[self.labels == i]
+                if len(cluster) > 0:                    # if empty cluster, keep original center
+                    self.centers[i] = np.mean(cluster, 0)
 
             if iter_ % 5 == 0:
-                dbi = self._db_index()
+                dbi = self._db_index()                  # evaluate un-supervised clustering
                 print("Iter %d, Davies-Bouldin Index: %g" % (iter_, dbi))
                 if last_dbi == dbi:
                     break
@@ -62,10 +70,10 @@ class KMeans:
         Perform one iteration
         :return: new labels assigned to each data
         """
-        dist = np.zeros((self.n_data, self.k))
+        dist = np.zeros((self.n_data, self.k))          # distance matrix
         for i in range(self.k):
             dist[:, i] = np.linalg.norm(self.data - self.centers[i], 2, 1)
-        return np.argmin(dist, 1)
+        return np.argmin(dist, 1)                       # assign to nearest cluster
 
     @staticmethod
     def _cluster_avg(cluster):
@@ -77,7 +85,7 @@ class KMeans:
         sum_ = 0.0
         n_ = len(cluster)
         if n_ == 0:
-            return
+            return -1
         for i in range(n_):
             for j in range(i + 1, n_):
                 sum_ += np.linalg.norm(cluster[i] - cluster[j])
@@ -89,11 +97,11 @@ class KMeans:
         :return: db_index
         """
         avg = np.array([self._cluster_avg(self.data[self.labels == i]) for i in range(self.k)])
-        dbi = -np.ones((self.k, self.k))
+        dbi = -np.ones((self.k, self.k))                # diagonal ignored
         for i in range(self.k):
             for j in range(i + 1, self.k):
                 temp = (avg[i] + avg[j]) / np.linalg.norm(self.centers[i] - self.centers[j])
-                dbi[i, j] = temp
+                dbi[i, j] = temp                        # symmetrical mat
                 dbi[j, i] = temp
         dbi = np.max(dbi, 1)
         return float(np.sum(dbi) / self.k)
@@ -102,19 +110,23 @@ class KMeans:
         """
         Plot scatter points with different colors
         """
-
-        # TODO: support PCA
         from matplotlib import pyplot as plt
+        if self.dim == 1:
+            raise NotImplementedError("plotting Dim = 1 not implemented")
         for i in range(self.k):
-            points = self.data[self.labels == i]
-            plt.scatter(points[:, 0], points[:, 1], color=self.colors[i])
-            plt.scatter(self.centers[i, 0], self.centers[i, 1], 100, marker='+', color='red')
+            points = self.data[self.labels == i]        # points in a cluster
+            if len(points) == 0:
+                continue
+            points = self._pca.transform(points)        # transform to 2-d points
+            plt.scatter(points[:, 0], points[:, 1], marker='o', color=self.colors[i], alpha=.6)
+            pca_center = self._pca.transform(self.centers[i].reshape((1, -1)))[0]
+            plt.scatter(pca_center[0], pca_center[1], 100, marker='+', color='red') # draw center point
         plt.show()
-        plt.pause(0.1)
-        plt.clf()
+        plt.pause(0.1)                                  # pause long enough to be seen
+        plt.clf()                                       # clear graph
 
     def get_centers(self):
-        return (self.centers * self._scale[1]) + self._scale[0]
+        return (self.centers * self._scale[1]) + self._scale[0] # de-normalization
 
     def get_labels(self):
         return self.labels.copy()
@@ -134,9 +146,9 @@ class KMeans:
 
 
 def _test_k_means():
-    k = KMeans(np.random.random((1000, 2)))
+    k = KMeans(np.random.random((1000, 50)))
     k.fit(4, plot=True)
-
+    raw_input()
 
 if __name__ == '__main__':
     _test_k_means()
