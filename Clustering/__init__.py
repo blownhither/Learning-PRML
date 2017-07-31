@@ -6,4 +6,4 @@
 @license: Apache Licence
 @time: 7/27/17 8:45 PM
 """
-__all__ = ['kMeans']
+__all__ = ['GeneralClustering', 'kMeans', 'LVQ']

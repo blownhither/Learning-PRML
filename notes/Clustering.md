@@ -45,7 +45,21 @@ Distance measure over attributes of different types combines both and use weight
 k-means minimize $E=\sum_i\sum_{x\in C_i}||x-\mu_i||_2^2$. To fully minimize it is a NP-hard problem. k-means uses greedy instead.   
 (Algorithm of k-means is omitted here.)
 
-
+####Learning Vector Quantization (LVQ)
+When truth data is given, we can use LVQ. LVQ also learns prototype vectors {$p_1,p_2,...,p_q$} stands for each clusters/class. One cluster, one class.
+```Python 
+def LVQ(D, t, learning_rate):
+    p = random_mat                              # prototype vectors
+    while not early_stop():
+        random_sample(x, y) in D
+        d = [distance(x, vec) for vec in p]     # distance array
+        i = argmin(d)                           # nearest prototype vector
+        if y == t[i]:                           # correct labeling
+            p[i] = p[i] + learning_rate * (x - p[i])
+        else:                                   # incorrect labeling
+            p[i] = p[i] - learning_rate * (x - p[i])
+    return p
+```
 
 
 
