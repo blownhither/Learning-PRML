@@ -72,6 +72,7 @@ class DecisionTree:
 
         # case 3
         div_dim = self._best_division(data_idx, dim_idx, labels)
+        node = DecisionTreeNode()
 
 
 

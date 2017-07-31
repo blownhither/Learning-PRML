@@ -16,7 +16,7 @@ import tensorflow as tf
 
 
 URL = "http://mattmahoney.net/dc/"
-VOCAB_SIZE = 10000
+VOCAB_SIZE = 50000
 BATCH_SIZE = 128
 EMBEDDING_SIZE = 128
 SKIP_WINDOW = 1
@@ -106,8 +106,6 @@ class W2VBatchMaker:
         idx = np.arange(self.n)
         np.random.shuffle(idx)
         self.data = self.data[idx]
-        self.labels = self.labels[idx]
-
 
 
 def run():
@@ -150,7 +148,7 @@ def run():
         init = tf.global_variables_initializer()
 
         # start training
-        N_STEPS = 100000
+        N_STEPS = 10000
         with tf.Session(graph=graph) as session:
             init.run()
             print("Initialized")
@@ -170,16 +168,43 @@ def run():
                     sim = similarity.eval()
                     for i in range(VALID_SIZE):
                         valid_word = reverse_dictionary[VALID_EXAMPLES[i]]
-                        top_k = 2
+                        top_k = 5
                         nearest = (-sim[i, :]).argsort()[1:top_k + 1]
-                        log_str = "Nearset to %s:" % valid_word
+                        log_str = "Nearest to %s:" % valid_word
                         for k in range(top_k):
                             close_word = reverse_dictionary[nearest[k]]
                             log_str += " " + close_word
                         print(log_str)
 
             final_embeddings = normalized_embeddings.eval()
-            print('Final embeddings %g' % final_embeddings)
+
+    def plot_with_labels(low_dim_embs, labels, filename='tsne.png'):
+        from matplotlib import pyplot as plt
+        assert low_dim_embs.shape[0] >= len(labels), 'More labels than embeddings'
+        plt.figure(figsize=(18, 18))  # in inches
+        for i, label in enumerate(labels):
+            x, y = low_dim_embs[i, :]
+            plt.scatter(x, y)
+            plt.annotate(label,
+                         xy=(x, y),
+                         xytext=(5, 2),
+                         textcoords='offset points',
+                         ha='right',
+                         va='bottom')
+        plt.savefig(filename)
+
+    # print('Final embeddings', final_embeddings)
+    # np.array(final_embeddings).tofile('../tmp/embed.txt', sep=',')
+
+    from sklearn.manifold import TSNE
+
+    tsne = TSNE(perplexity=30, n_components=2, init='pca', n_iter=5000, method='exact')
+    plot_only = 500
+    low_dim_embs = tsne.fit_transform(final_embeddings[:plot_only, :])
+    labels = [reverse_dictionary[i] for i in range(plot_only)]
+    print(low_dim_embs)
+    print(labels)
+    plot_with_labels(low_dim_embs, labels)
 
 
 
