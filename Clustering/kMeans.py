@@ -117,7 +117,8 @@ class KMeans:
             points = self.data[self.labels == i]        # points in a cluster
             if len(points) == 0:
                 continue
-            points = self._pca.transform(points)        # transform to 2-d points
+            if self.dim > 2:
+                points = self._pca.transform(points)        # transform to 2-d points
             plt.scatter(points[:, 0], points[:, 1], marker='o', color=self.colors[i], alpha=.6)
             pca_center = self._pca.transform(self.centers[i].reshape((1, -1)))[0]
             plt.scatter(pca_center[0], pca_center[1], 100, marker='+', color='red') # draw center point
@@ -146,8 +147,10 @@ class KMeans:
 
 
 def _test_k_means():
-    k = KMeans(np.random.random((1000, 50)))
-    k.fit(4, plot=True)
+    import pandas as pds
+    data = pds.read_csv('../Dataset/watermelon-tiny.csv')
+    k = KMeans(data[['Density', 'Sugar']])
+    k.fit(3, plot=True)
     raw_input()
 
 if __name__ == '__main__':
