@@ -72,7 +72,7 @@ class LogisticRegressionClassifier:
         self.reg_ratio = reg_ratio
         self.y = np.array(y)
         assert len(y) == self.n_samples
-        for i in range(n_batches):
+        for _ in range(n_batches):
             self._gradient_decrease(grad_ratio)
 
     def predict(self, x):

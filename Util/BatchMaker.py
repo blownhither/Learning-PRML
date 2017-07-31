@@ -59,9 +59,3 @@ class BatchMaker:
         return self._x.shape, self._y.shape
 
 
-if __name__ == '__main__':
-    def test():
-        b = BatchMaker(
-            x=np.tile(np.arange(10).reshape((10, 1)), (1, 10)),
-            y_=np.arange(10)
-        )

@@ -3,7 +3,7 @@ Excerpt from Tensorflow 实战
 """
 
 from Util.BatchMaker import BatchMaker
-from tensorflow.examples.tutorials.mnist import input_data
+# from tensorflow.examples.tutorials.mnist import input_data
 import tensorflow as tf
 import numpy as np
 

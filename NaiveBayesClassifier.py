@@ -82,7 +82,7 @@ class NaiveBayesClassifier:
         return ans
 
     def predict(self, x, smoothing=True):
-        n_features, n_samples = x.shape
+        _, n_samples = x.shape
         ans = [None] * n_samples
         for i in range(n_samples):
             d = self._predict(x[:, i], smoothing)

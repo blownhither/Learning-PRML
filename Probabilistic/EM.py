@@ -1,10 +1,9 @@
 import numpy as np
 
 from Probabilistic.GMM import GMM
-from scipy.stats import multivariate_normal
-"""
-This file runs a EM algorithm on GMM model and provides several visualization functions.
-"""
+# from scipy.stats import multivariate_normal
+
+# This file runs a EM algorithm on GMM model and provides several visualization functions.
 
 
 class EM(GMM):
@@ -15,7 +14,7 @@ class EM(GMM):
         :param dim: should be same with GMM observed
         :param data:observations, [float] * (n, dim)
         """
-        super().__init__(k, dim)
+        super(EM, self).__init__(k, dim)
         self.data = data
         assert data.shape[1] == dim
         self.n = len(data)
@@ -76,7 +75,7 @@ class EM(GMM):
 
     def fit(self, n_iter=100):
         """ Dummy fit """
-        for i in range(n_iter):
+        for _ in range(n_iter):
             self.maximization(self.expectation())
 
     def test(self):
