@@ -56,6 +56,7 @@ class DBSCAN(GeneralClustering):
             cores.remove(choice)
             next_label += 1
         self.labels = labels.copy()
+        self._plot(self.x, labels)
         return labels
 
     def _neighbors(self, sample, epsilon):
@@ -67,7 +68,7 @@ class DBSCAN(GeneralClustering):
         return self.labels.copy()
 
     def test(self):
-        dbi = self._db_index(self.x, self.labels)
+        dbi = self._db_index(self.x, self.labels)                   # include noise, TBD
         return dbi
 
 
@@ -75,7 +76,7 @@ def _test():
     import pandas as pds
     df = pds.read_csv('../Dataset/watermelon-numeric.csv')
     d = DBSCAN(df)
-    labels = d.fit(0.74, 5)
+    labels = d.fit(0.75, 5)
     print(labels)
     dbi = d.test()
     print(dbi)

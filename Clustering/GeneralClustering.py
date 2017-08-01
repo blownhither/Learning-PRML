@@ -122,9 +122,9 @@ class GeneralClustering:
                 self._pca = PCA(2)
                 self._pca.fit(self.x)
         types = set(labels)
-        colors = cm.rainbow(np.arange(0, 0.8, len(types)))
+        colors = cm.rainbow(np.linspace(0, 0.8, len(types)))
         for idx, l in enumerate(types):
-            points = self.x[labels == l]        # points in a cluster
+            points = x[labels == l]        # points in a cluster
             if self.dim > 2:
                 points = self._pca.transform(points)        # transform to 2-d points
             plt.scatter(points[:, 0], points[:, 1], marker='o', color=colors[idx], alpha=.6)
