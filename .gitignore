@@ -7,6 +7,7 @@
 !/Clustering/
 !/Dataset/
 !/Dataset/watermelon-tiny.csv
+!/Dataset/watermelon-numeric.csv
 !/Util/
 !/Util/kd-tree/
 !/Util/kd-tree/kd-tree/

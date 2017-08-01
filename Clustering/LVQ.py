@@ -21,7 +21,7 @@ class LVQ(GeneralClustering):
     def fit(self, learning_rate, max_iter=1000):
         self.centers = np.random.random((self.n_types, self.dim))
         for iter_ in range(max_iter):
-            choice = np.random.randint(self.n_data)
+            choice = np.random.randint(self.size)
             x_, y_ = self.x[choice], self.y[choice]             # random sample
             dist = np.linalg.norm(x_ - self.centers, 2, 1)      # distance to each prototype vectors
             idx = np.argmin(dist)                               # choose nearest prototype vector
@@ -32,8 +32,8 @@ class LVQ(GeneralClustering):
             self.centers[idx] = update
 
             if iter_ % 50 == 0:
-                n_sample = max(int(self.n_data * 0.05), 1)
-                idx = np.random.randint(0, self.n_data, n_sample)
+                n_sample = max(int(self.size * 0.05), 1)
+                idx = np.random.randint(0, self.size, n_sample)
                 samples = self.x[idx]                           # 5% samples
                 prediction = self.predict(samples)
                 jc = self.jaccard_coefficient(samples, prediction, self.y[idx])

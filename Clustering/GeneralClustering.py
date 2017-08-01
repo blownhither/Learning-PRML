@@ -15,10 +15,10 @@ class GeneralClustering:
         General type for Clustering classes. Y is None for unsupervised clustering
         """
         x = np.array(x)
-        self.n_data = x.shape[0]
+        self.size = x.shape[0]
         self.dim = x.shape[1]
-        self._scale = np.mean(x, 0), np.std(x, 0)
-        self.x = (x - self._scale[0]) / self._scale[1]    # data normalized
+        self._scale = np.mean(x, 0), np.std(x, 0)           # mean & std
+        self.x = (x - self._scale[0]) / self._scale[1]      # data normalized
         if y is not None:
             self.y = y
             self.types = set(y)
@@ -59,3 +59,4 @@ class GeneralClustering:
         if ss + sd + ds == 0:
             return np.inf
         return float(ss) / (ss + sd + ds)
+
