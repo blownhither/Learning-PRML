@@ -29,16 +29,23 @@
 - Therefore, hidden neuron h accepts $\alpha_h = \sum^d_{i=1} v_{ih}x_i$, output neuron j accepts $\beta_j = \sum^q_{h=1} w_{hj}b_h$
 - Learning rate $\eta$ (too big -> fluctuation, too small -> slow)
 
-####proof:
-Given input x, output is $\hat{y}_j=f(\beta_j-\theta_j)$, with square error $E_k = \frac{1}{2}\sum(\hat{y}_j - y_j)^2$ (notes 0.5 is merely for convenience).  
+####proof:  
+
+Given input x, output is 
+$\hat{y}_j=f(\beta_j-\theta_j)$, 
+with square error $E_k = \frac{1}{2}\sum(\hat{y}_j - y_j)^2$ 
+(notes 0.5 is merely for convenience).  
 Update any parameter v s.t. $v \leftarrow v + \Delta v$  
-BP uses **gradient descent** s.t. on the output part$$\Delta w_{hj} = -\eta \frac{\partial E_k}{\partial w_{hj}} = \eta g_j b_h$$
+BP uses **gradient descent** s.t. on the output part
+$$\Delta w_{hj} = -\eta \frac{\partial E_k}{\partial w_{hj}} = \eta g_j b_h$$
 $$\Delta \theta_j = -\eta g_j$$
+
 where output gradient $g_j$ is $$g_j = ... = \hat{y}_j (1-\hat{y}_j) (y_j - \hat{y}_j)$$  
 Likewise, on the input side, (could use a $\eta$ different than the two above)
 $$\Delta v_{ih} = \eta e_h x_i$$
 $$\Delta \gamma_h = -\eta e_h$$
-where hidden gradient $e_h$ is $$e_h = ... = b_h(1-b_h)\sum^l_{j=1}w_{hj}g_j$$
+where hidden gradient $e_h$ is 
+$$e_h = ... = b_h(1-b_h)\sum^l_{j=1}w_{hj}g_j$$
 > Calculate answer first, modify parameters accordingly, as is called Error Back Propagation
 
 ####comments:  

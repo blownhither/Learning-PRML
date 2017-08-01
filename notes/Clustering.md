@@ -11,7 +11,8 @@ We also want to increase intra-cluster similarity and lower inter-cluster simila
 ### 9.2 Measures
 To measure clustering performance, we could use external index or internal index. 
 
-External index comes from truth $\lambda^*$.
+External index comes from truth $\lambda^*$ .
+
 $$a=|SS|, SS=\{(x_i, x_j)|\lambda_i=\lambda_j, \lambda_i^*=\lambda_j^*, i< j\}$$
 $$b=|SD|, SD=\{(x_i, x_j)|\lambda_i=\lambda_j, \lambda_i^*\neq\lambda_j^*, i< j\}$$
 $$c=|DS|, DS=\{(x_i, x_j)|\lambda_i\neq\lambda_j, \lambda_i^*=\lambda_j^*, i< j\}$$
@@ -21,6 +22,7 @@ $$FMI=\sqrt{\frac{a}{a+b}\frac{a}{a+c}}$$
 $$RI=\frac{2(a+d)}{m(m-1)}$$
 
 Internal index does not depend on truth.
+
 $$avg(C)=\frac{2}{|C|(|C|-1)}\sum_{1\leq i< j \leq |C|}dist(x_i,x_j)$$
 $$diam(C)=\max dist(x_i,x_j)$$
 $$d_{min}(C_i,C_j)=\min_{x_i\in C_i, x_j\in C_j} dist(x_i,x_j)$$
@@ -41,11 +43,11 @@ $m_{u,a,i}$ - number of samples in cluster $i$ with $a$ on attribute $u$
 Distance measure over attributes of different types combines both and use weight for each attributes.
 
 ### 9.4 Prototype clustering
-#### k-Means
+#### k-Means  
 k-means minimize $E=\sum_i\sum_{x\in C_i}||x-\mu_i||_2^2$. To fully minimize it is a NP-hard problem. k-means uses greedy instead.   
 (Algorithm of k-means is omitted here.)
 
-####Learning Vector Quantization (LVQ)
+####Learning Vector Quantization (LVQ)  
 When truth data is given, we can use LVQ. LVQ also learns prototype vectors {$p_1,p_2,...,p_q$} stands for each clusters/class. One cluster, one class.
 ```Python 
 def LVQ(D, t, learning_rate):
