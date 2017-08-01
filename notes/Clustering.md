@@ -49,11 +49,11 @@ $m_{u,a,i}$ - number of samples in cluster $i$ with $a$ on attribute $u$
 Distance measure over attributes of different types combines both and use weight for each attributes.
 
 ### 9.4 Prototype clustering
-#### k-Means  
+### k-Means  
 k-means minimize $E=\sum_i\sum_{x\in C_i}||x-\mu_i||_2^2$. To fully minimize it is a NP-hard problem. k-means uses greedy instead.   
 (Algorithm of k-means is omitted here.)
 
-####Learning Vector Quantization (LVQ)  
+### Learning Vector Quantization (LVQ)  
 When truth data is given, we can use LVQ. LVQ also learns prototype vectors {$p_1,p_2,...,p_q$} stands for each clusters/class. One cluster, one class.
 ```Python 
 def LVQ(D, t, learning_rate):
@@ -68,6 +68,55 @@ def LVQ(D, t, learning_rate):
             p[i] = p[i] - learning_rate * (x - p[i])
     return p
 ```
+
+### Gaussian Mixture clustering
+see EM
+
+### 9.5 Density Clustering
+Density clustering considers spatial distance and connectivity. **DBSCAN** use sets of neighborhood $(\epsilon, MinPts)$ to depict density. 
+
+- $\epsilon$-neighbor: $N_\epsilon(x_j)=\{x_i\mid dist(x_i,x_j)\leq \epsilon\}$
+- Core object: if $|N_\epsilon(x_j)|\leq MinPts$, given specific $\epsilon$
+- Directly density-reachable: if $x_j$ is in $N_\epsilon(x_i)$, then $x_j$ is directly density-reachable from $x_i$
+- Density-reachable: chains of direct ones
+- Density-connected: $\exists x_k$ s.t. $x_i$ and $x_j$ are density-reachable from $x_k$
+
+Therefore, a *cluster* $C$ satisfies
+
+- Connectivity: any pair of samples are density-connected
+- Maximality: any density-reachable samples are included
+```Python
+def DBSCAN(D, epsilon, MinPts):
+    """:param: Dataset, Core range, Min core area size"""
+    core = set()
+    for sample in D:
+        if Neighbor(sample).size >= MinPts:
+            core.add(sample)
+    k = 0                               # number of clusters
+    unvisited = D
+    while core:
+        old = unvisited                 # keep unvisited
+        o = sample(core)                # one random core
+        Q = [o]                         # queue
+        unvisited.discard(o)
+        while Q:
+            q = Q.pop(0)                # queue head
+            if Neighbor(q).size >= MinPts:
+                delta = Neighbor(q).intersection(unvisited)
+                Q.extend(delta)
+                unvisited.discard_many(Q)
+        k += 1
+        clusters[k] = old.difference(unvisited)
+        core.discard_many(clusters[k])
+
+    return clusters
+```
+
+
+
+
+
+
 
 
 
