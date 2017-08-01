@@ -5,11 +5,15 @@
 
 ### 3.2 Linear Regression
 On dataset D = {($x_i,y_i$)}, linear regression aims at learning $f(x_i)=wx_i+b$ s.t. $f(x_i)\simeq y_i$. To determine w and b, we minimize **square loss**
-$$(w^*,b^*)=\mathop{\arg\min}_{(w,b)}\sum(f(x_i)-y_i)^2$$
+
+$$(w^*,b^*)=\mathop{\arg\min}_{(w,b)}\sum(f(x_i)-y_i)^2$$  
 This is also called least square method when x is one single feature, where
+
 $$w=\frac{\sum y_i(x_i-\bar{x})}{\sum x_i^2 - \frac{1}{m}(\sum x_i)^2}$$
 $$b=\frac{1}{m}\sum(y_i-wx_i)$$
-However, when x is multiple features, the targets remain the same while the problem was turned to **multivariate linear regression**. For simplicity, we rewrite $\hat{w}=(w;b),x=(x_1 x_2 ... x_{1d};1)$. Therefore, $$\hat{w}^*=\mathop{\arg\min}_{\hat{w}}(y-X\hat{w})^T(y-X\hat{w})=\mathop{\arg\min}_{\hat{w}}E_\hat{w}$$
+However, when x is multiple features, the targets remain the same while the problem was turned to **multivariate linear regression**. For simplicity, we rewrite $\hat{w}=(w;b),x=(x_1 x_2 ... x_{1d};1)$. Therefore,
+
+$$\hat{w}^*=\mathop{\arg\min}_{\hat{w}}(y-X\hat{w})^T(y-X\hat{w})=\mathop{\arg\min}_{\hat{w}}E_\hat{w}$$
 to infer gradient $$\frac{\partial E_\hat{w}}{\partial \hat{w}}=2X^T(X\hat{w}-y)=0$$
 therefore $$\hat{w}^*=(X^TX)^{-1}X^Ty$$
 > If the inverse in the equation does not exist, there will be multiple alternatives that minimizes square loss
@@ -22,7 +26,9 @@ learning rate < $\frac{2}{\sum{||x||_2}}$ (didn't work unless halved in experime
 ref: http://een.iust.ac.ir/profs/Farrokhi/Neural%20Networks/NNSH/chapter%205.pdf
 
 ### 3.3 Logistic Regression
-In order to use z=wx+b for classification, from **logistic function** $y=\frac{1}{1+e^{-z}}$, we infer linear model $$y=\frac{1}{1+e^{-w^Tx+b}},\ln\frac{1}{1-y}=w^Tx+b$$
+In order to use z=wx+b for classification, from **logistic function** 
+
+$y=\frac{1}{1+e^{-z}}$, we infer linear model $$y=\frac{1}{1+e^{-w^Tx+b}},\ln\frac{1}{1-y}=w^Tx+b$$
 the latter is called **log odds** or **logit**（对数几率）. Here y is conceived as P(x=1).
 > Though called regression, Logistic models are applied to classification problems. Its advantages includes:
 > 
