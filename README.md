@@ -21,3 +21,6 @@ Current implementations includes:
 - Notes on lots of subjects
 
 Comments and discussion are welcomed!
+
+
+For formula not rendered porperly in Github preview, you may use chrome + 'GitHub with MathJax'. Or you may clone the code and use sublime + OmnipotentMarkup or any other mathjax support you prefer to view the markdown notes.
