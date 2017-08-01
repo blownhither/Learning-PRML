@@ -60,3 +60,44 @@ class GeneralClustering:
             return np.inf
         return float(ss) / (ss + sd + ds)
 
+    @staticmethod
+    def _cluster_avg(cluster):
+        """
+        Average distance inside clusters
+        :param cluster: subset of data
+        :return: average distance
+        """
+        sum_ = 0.0
+        n_ = len(cluster)
+        if n_ == 0:
+            return -1
+        for i in range(n_):
+            for j in range(i + 1, n_):
+                sum_ += np.linalg.norm(cluster[i] - cluster[j])
+        return 2 * sum_ / n_ / (n_ + 1)
+
+    @staticmethod
+    def _db_index(x, y):
+        """
+        Davies-Bouldin Index of a unsupervised clustering scheme
+        :return: db_index
+        """
+        x = np.array(x)
+        dim = x.shape[1]
+        types = list(set(y))
+        k = len(types)
+        avg = np.zeros(k)
+        centers = np.zeros((k, dim))
+        for idx, t in enumerate(types):
+            cluster = x[y == t]
+            avg[idx] = GeneralClustering._cluster_avg(cluster)
+            centers[idx] = np.mean(cluster, 0)
+
+        dbi = -np.ones((k, k))                # diagonal ignored
+        for i in range(k):
+            for j in range(i + 1, k):
+                temp = (avg[i] + avg[j]) / np.linalg.norm(centers[i] - centers[j])
+                dbi[i, j] = temp                        # symmetrical mat
+                dbi[j, i] = temp
+        dbi = np.max(dbi, 1)
+        return float(np.sum(dbi) / k)
