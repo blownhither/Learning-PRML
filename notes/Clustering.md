@@ -11,7 +11,9 @@ We also want to increase intra-cluster similarity and lower inter-cluster simila
 ### 9.2 Measures
 To measure clustering performance, we could use external index or internal index. 
 
+
 External index comes from truth $\lambda^{*}$
+
 
 $$a=|SS|, SS=\{(x_i, x_j)|\lambda_i=\lambda_j, \lambda_i^*=\lambda_j^*, i< j\}$$
 
