@@ -12,8 +12,11 @@ import warnings
 
 from Clustering.GeneralClustering import GeneralClustering
 
+# TODO: use kd-tree
+
 
 class DBSCAN(GeneralClustering):
+    """ Density-Based Spatial Clustering of Applications with Noise, an unsupervised clustering method """
     def __init__(self, x):
         super(DBSCAN, self).__init__(x)
         self.labels = None
@@ -34,7 +37,6 @@ class DBSCAN(GeneralClustering):
         unvisited = set(range(self.size))                               # TODO: use array
         if len(cores) <= 1:
             warnings.warn('Invalid number of cores found (0 or 1), consider change parameters')
-        print('cores: ', cores)
         while len(cores) > 0:
             choice = random.sample(cores, 1)[0]
             queue_ = [choice]
@@ -64,6 +66,10 @@ class DBSCAN(GeneralClustering):
     def get_labels(self):
         return self.labels.copy()
 
+    def test(self):
+        dbi = self._db_index(self.x, self.labels)
+        return dbi
+
 
 def _test():
     import pandas as pds
@@ -71,6 +77,8 @@ def _test():
     d = DBSCAN(df)
     labels = d.fit(0.735, 5)
     print(labels)
+    dbi = d.test()
+    print(dbi)
 
 
 if __name__ == '__main__':
