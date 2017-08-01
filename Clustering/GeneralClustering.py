@@ -23,11 +23,11 @@ class GeneralClustering:
             self.x = (x - self._scale[0]) / self._scale[1]      # data normalized
         else:
             self._scale = None
-
         if y is not None:
             self.y = y
             self.types = set(y)
             self.n_types = len(self.types)
+        self._pca = None
 
     @staticmethod
     def _external_index(x, y, y_):
@@ -108,3 +108,27 @@ class GeneralClustering:
                 dbi[j, i] = temp
         dbi = np.max(dbi, 1)
         return float(np.sum(dbi) / k)
+
+    def _plot(self, x, labels):
+        """
+        Plot scatter points with different colors
+        """
+        from matplotlib import pyplot as plt, cm
+        if self.dim == 1:
+            raise NotImplementedError("plotting Dim = 1 not implemented")
+        elif self.dim > 2:
+            from sklearn.decomposition import PCA
+            if self._pca is None:
+                self._pca = PCA(2)
+                self._pca.fit(self.x)
+        types = set(labels)
+        colors = cm.rainbow(np.arange(0, 0.8, len(types)))
+        for idx, l in enumerate(types):
+            points = self.x[labels == l]        # points in a cluster
+            if self.dim > 2:
+                points = self._pca.transform(points)        # transform to 2-d points
+            plt.scatter(points[:, 0], points[:, 1], marker='o', color=colors[idx], alpha=.6)
+        plt.show()
+        plt.pause(0.1)                                  # pause long enough to be seen
+        plt.clf()                                       # clear graph
+
