@@ -7,6 +7,7 @@
 @time: 7/31/17 9:10 PM
 """
 import numpy as np
+import warnings
 
 
 class GeneralClustering:
@@ -18,8 +19,8 @@ class GeneralClustering:
         self.size = x.shape[0]
         self.dim = x.shape[1]
         if normalize is True:
+            self._scale = np.mean(x, 0), np.std(x, 0)  # mean & std
             self.x = (x - self._scale[0]) / self._scale[1]      # data normalized
-            self._scale = np.mean(x, 0), np.std(x, 0)           # mean & std
         else:
             self._scale = None
 
@@ -83,13 +84,15 @@ class GeneralClustering:
     @staticmethod
     def _db_index(x, y):
         """
-        Davies-Bouldin Index of a unsupervised clustering scheme
+        Davies-Bouldin Index of a unsupervised clustering scheme (better if smaller)
         :return: db_index
         """
         x = np.array(x)
         dim = x.shape[1]
         types = list(set(y))
         k = len(types)
+        if k <= 1:
+            warnings.warn('Invalid number of unique values in y')
         avg = np.zeros(k)
         centers = np.zeros((k, dim))
         for idx, t in enumerate(types):

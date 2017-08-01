@@ -26,14 +26,14 @@ class DBSCAN(GeneralClustering):
         Fit DBSCAN on dataset x
         :param epsilon: neighborhood radius (spatial distance)
         :param min_points: minimal size min_points
-        :return: labels assignment
+        :return: labels assignment, [0:k, -1 for noise]
         """
         cores = set()
         for idx, sample in enumerate(self.x):
             if len(self._neighbors(sample, epsilon)) - 1 >= min_points:  # don't count sample itself
                 cores.add(idx)
         next_label = 0
-        labels = np.zeros(self.size)
+        labels = -np.ones(self.size)
         unvisited = set(range(self.size))                               # TODO: use array
         if len(cores) <= 1:
             warnings.warn('Invalid number of cores found (0 or 1), consider change parameters')
@@ -75,7 +75,7 @@ def _test():
     import pandas as pds
     df = pds.read_csv('../Dataset/watermelon-numeric.csv')
     d = DBSCAN(df)
-    labels = d.fit(0.735, 5)
+    labels = d.fit(0.74, 5)
     print(labels)
     dbi = d.test()
     print(dbi)
