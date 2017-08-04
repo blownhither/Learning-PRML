@@ -112,7 +112,8 @@ def DBSCAN(D, epsilon, MinPts):
     return clusters
 ```
 
-
+### 9.6 Hierarchical Clustering
+Tree shape clustering. **AGENS (AGglomerative NESting)** starts with treat each sample as a cluster and combine pairs gradually. 
 
 
 

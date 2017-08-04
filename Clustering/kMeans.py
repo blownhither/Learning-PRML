@@ -114,7 +114,7 @@ class KMeans(GeneralClustering):
 
 def _test_k_means():
     import pandas as pds
-    data = pds.read_csv('../Dataset/watermelon-tiny.csv')
+    data = pds.read_csv('../Dataset/watermelon-numeric.csv')
     k = KMeans(data[['Density', 'Sugar']])
     k.fit(3, plot=True)
     input()
